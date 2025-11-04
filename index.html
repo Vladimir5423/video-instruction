@@ -94,12 +94,6 @@
             transform: translateY(-2px);
         }
 
-        .btn:disabled {
-            background: #cccccc;
-            cursor: not-allowed;
-            transform: none;
-        }
-
         .btn-admin {
             background: #28a745;
         }
@@ -426,8 +420,8 @@
                 <input type="password" id="adminPassword" placeholder="Введите пароль" required>
                 <div class="error" id="passwordError">Неверный пароль</div>
             </div>
-            <button class="btn" id="adminLoginBtn">Войти</button>
-            <button class="btn" id="adminCancelBtn" style="background: #6c757d; margin-top: 10px;">Отмена</button>
+            <button class="btn" onclick="checkAdminPassword()">Войти</button>
+            <button class="btn" onclick="closeAdminLogin()" style="background: #6c757d; margin-top: 10px;">Отмена</button>
         </div>
     </div>
 
@@ -438,8 +432,8 @@
             <p>Вы уверены, что хотите очистить все завершенные просмотры?</p>
             <p style="color: #dc3545; font-weight: bold;">Это действие нельзя отменить!</p>
             <div class="confirmation-buttons">
-                <button class="btn btn-confirm" id="confirmClearBtn">Да, очистить</button>
-                <button class="btn btn-cancel" id="cancelClearBtn">Отмена</button>
+                <button class="btn btn-confirm" onclick="confirmClearViewersData()">Да, очистить</button>
+                <button class="btn btn-cancel" onclick="closeConfirmationModal()">Отмена</button>
             </div>
         </div>
     </div>
@@ -454,8 +448,8 @@
                 <div class="error" id="nameError">Пожалуйста, введите ваш никнейм</div>
                 <div class="already-watched-error" id="alreadyWatchedError">Вы уже посмотрели инструктаж, ожидайте ответа от управляющей администрации</div>
             </div>
-            <button class="btn" id="startWatchingBtn">Начать просмотр</button>
-            <button class="btn btn-admin" id="openAdminBtn">Администрация</button>
+            <button class="btn" onclick="validateStep1()">Начать просмотр</button>
+            <button class="btn btn-admin" onclick="openAdminLogin()">Администрация</button>
         </div>
 
         <!-- Шаг 2: Просмотр видео -->
@@ -480,7 +474,7 @@
                 <div class="completion-overlay" id="completionOverlay">
                     <div class="completion-icon">✅</div>
                     <div class="completion-text">Ожидайте ответа от управляющей администрации</div>
-                    <button class="completion-button" id="exitBtn">Выйти</button>
+                    <button class="completion-button" onclick="location.reload()">Выйти</button>
                 </div>
             </div>
             
@@ -498,29 +492,29 @@
                     <div class="loading">Загрузка данных...</div>
                 </div>
             </div>
-            <button class="btn btn-clear" id="clearAllBtn">Очистить все просмотры</button>
-            <button class="btn" id="logoutBtn">Выйти</button>
+            <button class="btn btn-clear" onclick="openConfirmationModal()">Очистить все просмотры</button>
+            <button class="btn" onclick="location.reload()">Выйти</button>
         </div>
     </div>
 
     <script>
         // 🔥 Firebase Configuration - ЗАМЕНИТЕ НА ВАШИ ДАННЫЕ!
-       const firebaseConfig = {
+        const firebaseConfig = {
   apiKey: "AIzaSyArKjXgTWUcuo-zdWKa3RQBXJrWKlhfuDE",
   authDomain: "video-instruction-app.firebaseapp.com",
   projectId: "video-instruction-app",
   storageBucket: "video-instruction-app.firebasestorage.app",
   messagingSenderId: "214860071579",
   appId: "1:214860071579:web:c0f6e962fe3aed87d03c3e"
-};
         };
+        
 
         // Инициализация Firebase
         try {
             firebase.initializeApp(firebaseConfig);
-            console.log("Firebase инициализирован");
+            console.log("✅ Firebase инициализирован");
         } catch (error) {
-            console.error("Ошибка инициализации Firebase:", error);
+            console.error("❌ Ошибка Firebase:", error);
         }
         
         const db = firebase.firestore();
@@ -540,47 +534,11 @@
             'TGlzYV9Nb3JpYXJ0eQ=='  // Lisa_Moriarty
         ];
 
-        // Инициализация при загрузке страницы
-        document.addEventListener('DOMContentLoaded', function() {
-            console.log("DOM загружен, инициализируем кнопки...");
-            initializeApp();
-        });
-
-        function initializeApp() {
-            // Назначаем обработчики событий
-            document.getElementById('startWatchingBtn').addEventListener('click', validateStep1);
-            document.getElementById('openAdminBtn').addEventListener('click', openAdminLogin);
-            document.getElementById('adminLoginBtn').addEventListener('click', checkAdminPassword);
-            document.getElementById('adminCancelBtn').addEventListener('click', closeAdminLogin);
-            document.getElementById('clearAllBtn').addEventListener('click', openConfirmationModal);
-            document.getElementById('confirmClearBtn').addEventListener('click', confirmClearViewersData);
-            document.getElementById('cancelClearBtn').addEventListener('click', closeConfirmationModal);
-            document.getElementById('exitBtn').addEventListener('click', function() { location.reload(); });
-            document.getElementById('logoutBtn').addEventListener('click', function() { location.reload(); });
-
-            // Обработчик Enter в поле пароля
-            document.getElementById('adminPassword').addEventListener('keypress', function(e) {
-                if (e.key === 'Enter') {
-                    checkAdminPassword();
-                }
-            });
-
-            // Обработчик Enter в поле имени
-            document.getElementById('userName').addEventListener('keypress', function(e) {
-                if (e.key === 'Enter') {
-                    validateStep1();
-                }
-            });
-
-            console.log("Все обработчики событий назначены");
-        }
-
         // Функция для расшифровки пароля
         function decryptPassword(encrypted) {
             try {
                 return atob(encrypted);
             } catch (e) {
-                console.error("Ошибка расшифровки пароля:", e);
                 return null;
             }
         }
@@ -590,15 +548,12 @@
         // Проверить, смотрел ли пользователь уже видео
         async function checkIfAlreadyWatched(name) {
             try {
-                console.log("Проверяем, смотрел ли уже:", name);
                 const snapshot = await db.collection('viewers')
                     .where('name', '==', name)
                     .where('completed', '==', true)
                     .get();
                 
-                const alreadyWatched = !snapshot.empty;
-                console.log("Результат проверки:", alreadyWatched);
-                return alreadyWatched;
+                return !snapshot.empty;
             } catch (error) {
                 console.error('Ошибка проверки:', error);
                 return false;
@@ -608,12 +563,10 @@
         // Сохранить данные просмотра в Firebase
         async function saveViewerToFirebase(viewerData) {
             try {
-                console.log("Сохраняем в Firebase:", viewerData);
                 await db.collection('viewers').add({
                     ...viewerData,
                     timestamp: firebase.firestore.FieldValue.serverTimestamp()
                 });
-                console.log("Данные успешно сохранены");
                 return true;
             } catch (error) {
                 console.error('Ошибка сохранения:', error);
@@ -624,18 +577,14 @@
         // Получить все просмотры для админ-панели
         async function getAllViewers() {
             try {
-                console.log("Загружаем данные просмотров...");
                 const snapshot = await db.collection('viewers')
                     .orderBy('timestamp', 'desc')
                     .get();
                 
-                const viewers = snapshot.docs.map(doc => ({
+                return snapshot.docs.map(doc => ({
                     id: doc.id,
                     ...doc.data()
                 }));
-                
-                console.log("Загружено записей:", viewers.length);
-                return viewers;
             } catch (error) {
                 console.error('Ошибка загрузки:', error);
                 return [];
@@ -645,9 +594,7 @@
         // Удалить один просмотр
         async function deleteViewer(viewerId) {
             try {
-                console.log("Удаляем запись:", viewerId);
                 await db.collection('viewers').doc(viewerId).delete();
-                console.log("Запись успешно удалена");
                 return true;
             } catch (error) {
                 console.error('Ошибка удаления:', error);
@@ -658,7 +605,6 @@
         // Очистить все просмотры
         async function clearAllViewers() {
             try {
-                console.log("Очищаем все данные...");
                 const snapshot = await db.collection('viewers').get();
                 const batch = db.batch();
                 
@@ -667,7 +613,6 @@
                 });
                 
                 await batch.commit();
-                console.log("Все данные успешно очищены");
                 return true;
             } catch (error) {
                 console.error('Ошибка очистки:', error);
@@ -677,16 +622,13 @@
 
         // Отслеживать изменения в реальном времени
         function setupRealtimeListener() {
-            console.log("Настраиваем слушатель реального времени");
             return db.collection('viewers')
                 .orderBy('timestamp', 'desc')
                 .onSnapshot(snapshot => {
-                    const viewers = snapshot.docs.map(doc => ({
+                    displayViewersList(snapshot.docs.map(doc => ({
                         id: doc.id,
                         ...doc.data()
-                    }));
-                    console.log("Обновление данных в реальном времени:", viewers.length);
-                    displayViewersList(viewers);
+                    })));
                 }, error => {
                     console.error('Ошибка реального времени:', error);
                 });
@@ -697,9 +639,7 @@
             if (!videoPlayer) return;
             
             if (videoPlayer.paused) {
-                videoPlayer.play().catch(error => {
-                    console.log("Ошибка воспроизведения:", error);
-                });
+                videoPlayer.play();
                 hidePauseIndicator();
             } else {
                 videoPlayer.pause();
@@ -727,15 +667,9 @@
 
         // Инициализация видеоплеера
         function initVideoPlayer() {
-            console.log("Инициализация видеоплеера...");
             videoPlayer = document.getElementById('customVideo');
             pauseIndicator = document.getElementById('pauseIndicator');
             const videoContainer = document.getElementById('videoContainer');
-            
-            if (!videoPlayer) {
-                console.error("Видео элемент не найден!");
-                return;
-            }
             
             videoContainer.addEventListener('click', function(e) {
                 if (!e.target.closest('.completion-overlay')) {
@@ -744,7 +678,6 @@
             });
             
             videoPlayer.addEventListener('ended', function() {
-                console.log("Видео завершено");
                 if (window.currentViewer && !window.currentViewer.completed && isTabActive) {
                     completeViewing();
                 }
@@ -762,21 +695,17 @@
             });
 
             videoPlayer.currentTime = 0;
-            console.log("Видеоплеер инициализирован");
         }
 
         function openConfirmationModal() {
-            console.log("Открываем модальное окно подтверждения");
             document.getElementById('confirmationModal').classList.add('active');
         }
 
         function closeConfirmationModal() {
-            console.log("Закрываем модальное окно подтверждения");
             document.getElementById('confirmationModal').classList.remove('active');
         }
 
         async function confirmClearViewersData() {
-            console.log("Подтверждаем очистку данных");
             const success = await clearAllViewers();
             if (success) {
                 alert('Все данные успешно очищены!');
@@ -789,24 +718,19 @@
         // Отслеживаем активность вкладки
         document.addEventListener('visibilitychange', function() {
             isTabActive = !document.hidden;
-            console.log("Активность вкладки:", isTabActive ? "активна" : "неактивна");
         });
 
         function openAdminLogin() {
-            console.log("Открываем админ-логин");
             document.getElementById('adminLogin').classList.add('active');
-            document.getElementById('adminPassword').focus();
         }
 
         function closeAdminLogin() {
-            console.log("Закрываем админ-логин");
             document.getElementById('adminLogin').classList.remove('active');
             document.getElementById('adminPassword').value = '';
             document.getElementById('passwordError').style.display = 'none';
         }
 
         function checkAdminPassword() {
-            console.log("Проверяем пароль администратора");
             const password = document.getElementById('adminPassword').value.trim();
             let isValid = false;
             
@@ -819,18 +743,15 @@
             }
             
             if (isValid) {
-                console.log("Пароль верный");
                 document.getElementById('adminPassword').value = '';
                 closeAdminLogin();
                 showAdminPanel();
             } else {
-                console.log("Неверный пароль");
                 document.getElementById('passwordError').style.display = 'block';
             }
         }
 
         async function validateStep1() {
-            console.log("Валидация шага 1");
             const name = document.getElementById('userName').value.trim();
             let valid = true;
 
@@ -838,29 +759,24 @@
             document.getElementById('alreadyWatchedError').style.display = 'none';
 
             if (!name) {
-                console.log("Имя не введено");
                 document.getElementById('nameError').style.display = 'block';
                 valid = false;
             } else {
-                console.log("Проверяем, смотрел ли пользователь:", name);
                 // 🔥 Проверяем в Firebase, а не в LocalStorage
                 const alreadyWatched = await checkIfAlreadyWatched(name);
                 
                 if (alreadyWatched) {
-                    console.log("Пользователь уже смотрел видео");
                     document.getElementById('alreadyWatchedError').style.display = 'block';
                     valid = false;
                 }
             }
 
             if (valid) {
-                console.log("Валидация пройдена, начинаем просмотр");
                 startViewing(name);
             }
         }
 
         function startViewing(name) {
-            console.log("Начинаем просмотр для:", name);
             videoStartTime = new Date();
             
             window.currentViewer = {
@@ -876,26 +792,18 @@
             const completionOverlay = document.getElementById('completionOverlay');
             completionOverlay.classList.remove('active');
 
-            // Даем время для отрисовки DOM перед инициализацией видео
-            setTimeout(() => {
-                initVideoPlayer();
-                
-                if (videoPlayer) {
-                    const playPromise = videoPlayer.play();
-                    if (playPromise !== undefined) {
-                        playPromise.catch(error => {
-                            console.log("Автовоспроизведение заблокировано:", error);
-                            // Показываем сообщение пользователю
-                            alert("Нажмите на видео для начала воспроизведения");
-                        });
-                    }
-                }
-            }, 100);
+            initVideoPlayer();
+            
+            const playPromise = videoPlayer.play();
+            if (playPromise !== undefined) {
+                playPromise.catch(error => {
+                    console.log("Автовоспроизведение заблокировано:", error);
+                });
+            }
         }
 
         async function completeViewing() {
             if (window.currentViewer && !window.currentViewer.completed && isTabActive) {
-                console.log("Завершаем просмотр");
                 const endTime = new Date();
                 const watchDuration = Math.round((endTime - videoStartTime) / 1000);
                 
@@ -913,18 +821,12 @@
                 const success = await saveViewerToFirebase(window.currentViewer);
                 if (!success) {
                     alert('Ошибка сохранения данных. Попробуйте еще раз.');
-                } else {
-                    console.log("Просмотр успешно завершен и сохранен");
                 }
             }
         }
 
         async function showAdminPanel() {
-            console.log("Показываем админ-панель");
             showStep(3);
-            
-            // Показываем loading
-            document.getElementById('viewersList').innerHTML = '<div class="loading">Загрузка данных...</div>';
             
             // Загружаем данные и настраиваем реальное время
             const viewers = await getAllViewers();
@@ -951,9 +853,7 @@
                 const endTime = viewer.endTime ? new Date(viewer.endTime).toLocaleString('ru-RU') : 'Неизвестно';
                 const duration = viewer.watchDuration ? ` (${viewer.watchDuration} сек)` : '';
                 
-                const status = viewer.watchedFully ? 
-                    '✅Кандидат посмотрел инструктаж' : 
-                    '❌Кандидат не полностью или вообще не смотрел инструктаж';
+                const status = viewer.watchedFully ? '✅Кандидат посмотрел инструктаж' : '❌Кандидат не полностью или вообще не смотрел инструктаж';
                 
                 viewerItem.className = viewer.watchedFully ? 'viewer-item' : 'viewer-item incomplete';
                 
@@ -981,7 +881,6 @@
         }
 
         function showStep(stepNumber) {
-            console.log("Переключаем на шаг:", stepNumber);
             document.querySelectorAll('.step').forEach(step => {
                 step.classList.remove('active');
             });
@@ -1007,7 +906,10 @@
             }
         });
 
-        console.log("Приложение инициализировано");
+        // Инициализация при загрузке
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log("🚀 Приложение загружено");
+        });
     </script>
 </body>
 </html>
