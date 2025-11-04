@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Инструктаж</title>
+    <title>Видео-инструктаж</title>
     <style>
         * {
             margin: 0;
@@ -177,24 +177,17 @@
             top: 50%;
             left: 50%;
             transform: translate(-50%, -50%);
-            background: rgba(0, 0, 0, 0.8);
-            border-radius: 50%;
-            width: 100px;
-            height: 100px;
             display: none;
             justify-content: center;
             align-items: center;
             z-index: 10;
             pointer-events: none;
+            font-size: 80px;
+            text-shadow: 0 2px 10px rgba(0,0,0,0.5);
         }
 
         .pause-indicator.active {
             display: flex;
-        }
-
-        .pause-icon {
-            font-size: 50px;
-            color: white;
         }
 
         .completion-overlay {
@@ -262,10 +255,34 @@
             margin: 10px 0;
             border-radius: 8px;
             border-left: 4px solid #28a745;
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            gap: 15px;
         }
 
         .viewer-item.incomplete {
             border-left-color: #dc3545;
+        }
+
+        .viewer-content {
+            flex-grow: 1;
+        }
+
+        .delete-btn {
+            background: #dc3545;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            padding: 8px 12px;
+            cursor: pointer;
+            transition: background 0.3s;
+            flex-shrink: 0;
+            font-size: 14px;
+        }
+
+        .delete-btn:hover {
+            background: #c82333;
         }
 
         @keyframes fadeIn {
@@ -388,7 +405,7 @@
     <div class="container">
         <!-- Шаг 1: Регистрация -->
         <div class="step active" id="step1">
-            <h1>Инструктаж</h1>
+            <h1>Видео-инструктаж</h1>
             <div class="form-group">
                 <label for="userName">Ваш игровой никнейм в формате Имя_Фамилия:</label>
                 <input type="text" id="userName" placeholder="Введите ваш никнейм" required>
@@ -406,7 +423,7 @@
             <div class="video-container" id="videoContainer">
                 <!-- Индикатор паузы -->
                 <div class="pause-indicator" id="pauseIndicator">
-                    <div class="pause-icon">⏸️</div>
+                    ⏸️
                 </div>
                 
                 <div class="video-inner">
@@ -421,7 +438,7 @@
                 <div class="completion-overlay" id="completionOverlay">
                     <div class="completion-icon">✅</div>
                     <div class="completion-text">Ожидайте ответа от управляющей администрации</div>
-                    <button class="completion-button" onclick="location.reload()">Посмотреть еще раз</button>
+                    <button class="completion-button" onclick="location.reload()">Выйти</button>
                 </div>
             </div>
             
@@ -439,8 +456,8 @@
                     <!-- Сюда добавляются результаты -->
                 </div>
             </div>
-            <button class="btn btn-clear" onclick="openConfirmationModal()">Очистить завершенные просмотры</button>
-            <button class="btn" onclick="location.reload()">Вернуться на главную</button>
+            <button class="btn btn-clear" onclick="openConfirmationModal()">Очистить все просмотры</button>
+            <button class="btn" onclick="location.reload()">Выйти</button>
         </div>
     </div>
 
@@ -468,6 +485,13 @@
             } catch (e) {
                 return null;
             }
+        }
+
+        // Функция для удаления одного просмотра
+        function deleteViewer(watchId) {
+            viewersData = viewersData.filter(viewer => viewer.watchId !== watchId);
+            localStorage.setItem('viewersData', JSON.stringify(viewersData));
+            displayViewersList();
         }
 
         // Функция для переключения паузы/продолжения
@@ -697,10 +721,13 @@
                 viewerItem.className = viewer.watchedFully ? 'viewer-item' : 'viewer-item incomplete';
                 
                 viewerItem.innerHTML = `
-                    <strong>${viewer.name}</strong><br>
-                    ${status}<br>
-                    Начало просмотра: ${startTime}<br>
-                    Завершение просмотра: ${endTime}${duration}
+                    <div class="viewer-content">
+                        <strong>${viewer.name}</strong><br>
+                        ${status}<br>
+                        Начало просмотра: ${startTime}<br>
+                        Завершение просмотра: ${endTime}${duration}
+                    </div>
+                    <button class="delete-btn" onclick="deleteViewer(${viewer.watchId})">🗑️</button>
                 `;
                 
                 viewersList.appendChild(viewerItem);
