@@ -110,93 +110,91 @@
         .video-container {
             position: relative;
             margin: 30px 0 10px 0;
+            background: #000;
+            border-radius: 15px;
+            overflow: hidden;
+            cursor: pointer;
+            border: 4px solid #667eea;
+            box-shadow: 0 10px 30px rgba(102, 126, 234, 0.3);
+            padding: 3px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+
+        .video-inner {
+            border-radius: 12px;
+            overflow: hidden;
+            height: 100%;
         }
 
         #customVideo {
             width: 100%;
-            border-radius: 10px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
-            transition: filter 0.5s ease;
-            /* Полное отключение всех контролов */
-            -webkit-touch-callout: none;
-            -webkit-user-select: none;
-            -khtml-user-select: none;
-            -moz-user-select: none;
-            -ms-user-select: none;
-            user-select: none;
-            pointer-events: none;
+            display: block;
+            -webkit-appearance: none;
+            -moz-appearance: none;
+            appearance: none;
         }
 
-        .video-wrapper {
-            position: relative;
-            display: inline-block;
-            width: 100%;
-        }
-
-        .video-wrapper video {
-            pointer-events: none;
-        }
-
-        /* Полностью убираем ВСЕ стандартные контролы */
+        /* Скрываем все элементы управления */
         #customVideo::-webkit-media-controls {
             display: none !important;
         }
-
+        
         #customVideo::-webkit-media-controls-panel {
             display: none !important;
         }
-
+        
         #customVideo::-webkit-media-controls-play-button {
             display: none !important;
         }
-
+        
         #customVideo::-webkit-media-controls-timeline {
             display: none !important;
         }
-
+        
         #customVideo::-webkit-media-controls-current-time-display {
             display: none !important;
         }
-
+        
         #customVideo::-webkit-media-controls-time-remaining-display {
             display: none !important;
         }
-
-        #customVideo::-webkit-media-controls-timeline-container {
-            display: none !important;
-        }
-
-        #customVideo::-webkit-media-controls-volume-slider-container {
-            display: none !important;
-        }
-
-        #customVideo::-webkit-media-controls-volume-slider {
-            display: none !important;
-        }
-
+        
         #customVideo::-webkit-media-controls-mute-button {
             display: none !important;
         }
-
-        #customVideo::-webkit-media-controls-toggle-closed-captions-button {
+        
+        #customVideo::-webkit-media-controls-volume-slider {
             display: none !important;
         }
-
+        
         #customVideo::-webkit-media-controls-fullscreen-button {
             display: none !important;
         }
 
-        #customVideo::-webkit-media-controls-overlay-play-button {
-            display: none !important;
+        /* Индикатор паузы */
+        .pause-indicator {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(0, 0, 0, 0.8);
+            border-radius: 50%;
+            width: 100px;
+            height: 100px;
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 10;
+            pointer-events: none;
         }
 
-        #customVideo::-webkit-media-controls-picture-in-picture-button {
-            display: none !important;
+        .pause-indicator.active {
+            display: flex;
         }
 
-        /* Для Firefox */
-        #customVideo::-moz-media-controls {
-            display: none !important;
+        .pause-icon {
+            font-size: 50px;
+            color: white;
         }
 
         .completion-overlay {
@@ -249,38 +247,6 @@
             box-shadow: 0 10px 20px rgba(0,0,0,0.2);
         }
 
-        .progress-container {
-            background: #f0f0f0;
-            border-radius: 10px;
-            height: 20px;
-            margin: 10px 0;
-            overflow: hidden;
-            position: relative;
-        }
-
-        .progress-bar {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            height: 100%;
-            width: 0%;
-            transition: width 0.3s;
-            border-radius: 10px;
-        }
-
-        .progress-text {
-            text-align: center;
-            color: #666;
-            font-size: 14px;
-            margin-bottom: 5px;
-        }
-
-        .progress-time {
-            display: flex;
-            justify-content: space-between;
-            color: #666;
-            font-size: 12px;
-            margin-top: 5px;
-        }
-
         .admin-panel {
             background: #f8f9fa;
             border-radius: 10px;
@@ -324,27 +290,6 @@
             font-size: 14px;
             margin-top: 5px;
             display: none;
-        }
-
-        .custom-controls {
-            display: flex;
-            justify-content: center;
-            gap: 20px;
-            margin-top: 15px;
-        }
-
-        .control-btn {
-            background: #667eea;
-            color: white;
-            border: none;
-            padding: 10px 20px;
-            border-radius: 5px;
-            cursor: pointer;
-            font-size: 14px;
-        }
-
-        .control-btn:hover {
-            background: #5a6fd8;
         }
 
         .admin-login {
@@ -458,10 +403,16 @@
         <div class="step" id="step2">
             <h1>Инструктаж</h1>
             
-            <div class="video-container">
-                <div class="video-wrapper">
-                    <video id="customVideo" ontimeupdate="updateProgress()">
-                        <source src="https://www.youtube.com/embed/CB3RP6a9Miw" type="video/mp4">
+            <div class="video-container" id="videoContainer">
+                <!-- Индикатор паузы -->
+                <div class="pause-indicator" id="pauseIndicator">
+                    <div class="pause-icon">⏸️</div>
+                </div>
+                
+                <div class="video-inner">
+                    <video id="customVideo" controlsList="nodownload" oncontextmenu="return false;">
+                        <!-- ВАША ССЫЛКА НА ВИДЕО -->
+                        <source src="https://ia600109.us.archive.org/2/items/1104-1_202511/1104%281%29.mp4" type="video/mp4">
                         Ваш браузер не поддерживает видео.
                     </video>
                 </div>
@@ -470,23 +421,12 @@
                 <div class="completion-overlay" id="completionOverlay">
                     <div class="completion-icon">✅</div>
                     <div class="completion-text">Ожидайте ответа от управляющей администрации</div>
-                    <button class="completion-button" onclick="watchAgain()">Посмотреть еще раз</button>
+                    <button class="completion-button" onclick="location.reload()">Посмотреть еще раз</button>
                 </div>
             </div>
-
-            <div class="progress-text">
-                Прогресс просмотра: <span id="progressPercent">0%</span>
-            </div>
-            <div class="progress-container">
-                <div class="progress-bar" id="progressBar"></div>
-            </div>
-            <div class="progress-time">
-                <span id="currentTime">0:00</span>
-                <span id="totalTime">0:00</span>
-            </div>
-
-            <div class="custom-controls" id="customControls">
-                <button class="control-btn" onclick="togglePlay()">⏯️ Пауза/Продолжить</button>
+            
+            <div style="text-align: center; margin-top: 10px; color: #666; font-size: 14px;">
+                💡 Нажмите на видео для паузы/продолжения
             </div>
         </div>
 
@@ -500,17 +440,18 @@
                 </div>
             </div>
             <button class="btn btn-clear" onclick="openConfirmationModal()">Очистить завершенные просмотры</button>
-            <button class="btn" onclick="goToStep1()">Вернуться на главную</button>
+            <button class="btn" onclick="location.reload()">Вернуться на главную</button>
         </div>
     </div>
 
     <script>
         // Хранилище данных
         let viewersData = JSON.parse(localStorage.getItem('viewersData')) || [];
-        let maxAchievedProgress = 0;
         let videoStartTime = null;
         let isTabActive = true;
-        let videoDuration = 0;
+        let videoPlayer = null;
+        let pauseIndicator = null;
+        let pauseIndicatorTimeout = null;
 
         // Зашифрованные пароли (base64)
         const encryptedPasswords = [
@@ -527,6 +468,76 @@
             } catch (e) {
                 return null;
             }
+        }
+
+        // Функция для переключения паузы/продолжения
+        function togglePlayPause() {
+            if (!videoPlayer) return;
+            
+            if (videoPlayer.paused) {
+                videoPlayer.play();
+                hidePauseIndicator();
+            } else {
+                videoPlayer.pause();
+                showPauseIndicator();
+            }
+        }
+
+        // Показать индикатор паузы
+        function showPauseIndicator() {
+            if (pauseIndicator) {
+                pauseIndicator.classList.add('active');
+                // Автоматически скрыть через 2 секунды
+                clearTimeout(pauseIndicatorTimeout);
+                pauseIndicatorTimeout = setTimeout(() => {
+                    hidePauseIndicator();
+                }, 2000);
+            }
+        }
+
+        // Скрыть индикатор паузы
+        function hidePauseIndicator() {
+            if (pauseIndicator) {
+                pauseIndicator.classList.remove('active');
+            }
+        }
+
+        // Инициализация видеоплеера
+        function initVideoPlayer() {
+            videoPlayer = document.getElementById('customVideo');
+            pauseIndicator = document.getElementById('pauseIndicator');
+            const videoContainer = document.getElementById('videoContainer');
+            
+            // Обработчик клика по контейнеру видео
+            videoContainer.addEventListener('click', function(e) {
+                // Предотвращаем срабатывание, если кликнули на completion overlay
+                if (!e.target.closest('.completion-overlay')) {
+                    togglePlayPause();
+                }
+            });
+            
+            videoPlayer.addEventListener('ended', function() {
+                if (window.currentViewer && !window.currentViewer.completed && isTabActive) {
+                    completeViewing();
+                }
+            });
+            
+            // Убираем стандартные элементы управления
+            videoPlayer.controls = false;
+            
+            // Блокируем контекстное меню на видео
+            videoPlayer.addEventListener('contextmenu', function(e) {
+                e.preventDefault();
+                return false;
+            });
+            
+            // Скрываем индикатор при воспроизведении
+            videoPlayer.addEventListener('play', function() {
+                hidePauseIndicator();
+            });
+
+            // Сбрасываем видео при каждом новом просмотре
+            videoPlayer.currentTime = 0;
         }
 
         function openConfirmationModal() {
@@ -549,21 +560,13 @@
             isTabActive = !document.hidden;
         });
 
-        // Отслеживаем закрытие окна/вкладки
-        window.addEventListener('beforeunload', function() {
-            if (window.currentViewer && !window.currentViewer.completed) {
-                window.currentViewer.interrupted = true;
-                saveViewerData();
-            }
-        });
-
         function openAdminLogin() {
             document.getElementById('adminLogin').classList.add('active');
         }
 
         function closeAdminLogin() {
             document.getElementById('adminLogin').classList.remove('active');
-            document.getElementById('adminPassword').value = ''; // Очищаем пароль
+            document.getElementById('adminPassword').value = '';
             document.getElementById('passwordError').style.display = 'none';
         }
 
@@ -571,7 +574,6 @@
             const password = document.getElementById('adminPassword').value.trim();
             let isValid = false;
             
-            // Проверяем все зашифрованные пароли
             for (let encrypted of encryptedPasswords) {
                 const decrypted = decryptPassword(encrypted);
                 if (decrypted === password) {
@@ -581,7 +583,7 @@
             }
             
             if (isValid) {
-                document.getElementById('adminPassword').value = ''; // Очищаем пароль после входа
+                document.getElementById('adminPassword').value = '';
                 closeAdminLogin();
                 showAdminPanel();
             } else {
@@ -593,7 +595,6 @@
             const name = document.getElementById('userName').value.trim();
             let valid = true;
 
-            // Скрываем все ошибки сначала
             document.getElementById('nameError').style.display = 'none';
             document.getElementById('alreadyWatchedError').style.display = 'none';
 
@@ -601,18 +602,15 @@
                 document.getElementById('nameError').style.display = 'block';
                 valid = false;
             } else {
-                // Проверяем, смотрел ли уже этот игрок
                 const existingViewer = viewersData.find(viewer => viewer.name === name && viewer.completed);
                 
                 if (existingViewer) {
-                    // Показываем сообщение, что уже смотрел (не пускаем на видео)
                     document.getElementById('alreadyWatchedError').style.display = 'block';
                     valid = false;
                 }
             }
 
             if (valid) {
-                // Начинаем новый просмотр
                 startViewing(name);
             }
         }
@@ -620,102 +618,27 @@
         function startViewing(name) {
             videoStartTime = new Date();
             
-            // Создаем новую запись для каждого просмотра
             window.currentViewer = {
                 name: name,
                 startTime: videoStartTime.toISOString(),
                 completed: false,
                 interrupted: false,
-                watchId: Date.now() // Уникальный ID для каждого просмотра
+                watchId: Date.now()
             };
 
             showStep(2);
             
-            const video = document.getElementById('customVideo');
             const completionOverlay = document.getElementById('completionOverlay');
-            const customControls = document.getElementById('customControls');
-            
-            // Сбрасываем интерфейс
             completionOverlay.classList.remove('active');
-            customControls.style.display = 'flex';
+
+            // Инициализируем и запускаем видео
+            initVideoPlayer();
             
-            maxAchievedProgress = 0;
-            videoDuration = 0;
-
-            // Сбрасываем видео и прогресс
-            video.currentTime = 0;
-            video.pause();
-            document.getElementById('progressPercent').textContent = '0%';
-            document.getElementById('progressBar').style.width = '0%';
-            document.getElementById('currentTime').textContent = '0:00';
-            document.getElementById('totalTime').textContent = '0:00';
-
-            // Полное отключение контролов
-            video.controls = false;
-            video.removeAttribute('controls');
-            video.setAttribute('disablePictureInPicture', 'true');
-            video.setAttribute('disableRemotePlayback', 'true');
-
-            // Ждем загрузки метаданных для отображения общего времени
-            video.addEventListener('loadedmetadata', function() {
-                videoDuration = video.duration;
-                document.getElementById('totalTime').textContent = formatTime(videoDuration);
-            });
-
-            // Следим за завершением видео
-            video.addEventListener('ended', function() {
-                if (window.currentViewer && !window.currentViewer.completed && isTabActive) {
-                    completeViewing();
-                }
-            });
-
-            // Автовоспроизведение
-            video.play().catch(e => {
-                console.log('Автовоспроизведение заблокировано');
-            });
-        }
-
-        function updateProgress() {
-            const video = document.getElementById('customVideo');
-            if (video.duration && video.duration > 0) {
-                const progress = (video.currentTime / video.duration) * 100;
-                const progressPercent = Math.min(100, Math.round(progress));
-
-                // Обновляем прогресс только если он увеличился
-                if (progressPercent > maxAchievedProgress) {
-                    maxAchievedProgress = progressPercent;
-                    
-                    document.getElementById('progressPercent').textContent = progressPercent + '%';
-                    document.getElementById('progressBar').style.width = progressPercent + '%';
-                    document.getElementById('currentTime').textContent = formatTime(video.currentTime);
-                    
-                    // Обновляем общее время если оно загрузилось
-                    if (videoDuration === 0 && video.duration > 0) {
-                        videoDuration = video.duration;
-                        document.getElementById('totalTime').textContent = formatTime(videoDuration);
-                    }
-                }
-
-                // Блокируем перемотку ВПЕРЕД И НАЗАД
-                const expectedTime = maxAchievedProgress / 100 * video.duration;
-                if (Math.abs(video.currentTime - expectedTime) > 2) {
-                    video.currentTime = expectedTime;
-                }
-            }
-        }
-
-        function formatTime(seconds) {
-            const mins = Math.floor(seconds / 60);
-            const secs = Math.floor(seconds % 60);
-            return `${mins}:${secs < 10 ? '0' : ''}${secs}`;
-        }
-
-        function togglePlay() {
-            const video = document.getElementById('customVideo');
-            if (video.paused) {
-                video.play();
-            } else {
-                video.pause();
+            const playPromise = videoPlayer.play();
+            if (playPromise !== undefined) {
+                playPromise.catch(error => {
+                    console.log("Автовоспроизведение заблокировано:", error);
+                });
             }
         }
 
@@ -724,38 +647,23 @@
                 const endTime = new Date();
                 const watchDuration = Math.round((endTime - videoStartTime) / 1000);
                 
+                // Проверяем просмотрено ли 9:37 (577 секунд) или больше
+                const watchedFully = watchDuration >= 577; // 9 минут 37 секунд
+                
                 window.currentViewer.completed = true;
                 window.currentViewer.endTime = endTime.toISOString();
                 window.currentViewer.watchDuration = watchDuration;
-                window.currentViewer.videoDuration = videoDuration;
+                window.currentViewer.watchedFully = watchedFully;
                 
-                // Показываем красивое окно завершения
                 const completionOverlay = document.getElementById('completionOverlay');
-                const customControls = document.getElementById('customControls');
-                
                 completionOverlay.classList.add('active');
-                customControls.style.display = 'none';
-                
-                // Устанавливаем финальные значения прогресса
-                document.getElementById('progressPercent').textContent = '100%';
-                document.getElementById('progressBar').style.width = '100%';
-                document.getElementById('currentTime').textContent = formatTime(videoDuration);
                 
                 saveViewerData();
             }
         }
 
-        function watchAgain() {
-            // Очищаем поле имени
-            document.getElementById('userName').value = '';
-            // Скрываем сообщение о уже просмотренном
-            document.getElementById('alreadyWatchedError').style.display = 'none';
-            showStep(1);
-        }
-
         function saveViewerData() {
             if (window.currentViewer && window.currentViewer.completed) {
-                // Всегда добавляем новую запись (даже если имя повторяется)
                 viewersData.push({...window.currentViewer});
                 localStorage.setItem('viewersData', JSON.stringify(viewersData));
             }
@@ -775,7 +683,6 @@
                 return;
             }
 
-            // Сортируем по времени (новые сверху)
             const sortedViewers = [...viewersData].sort((a, b) => new Date(b.endTime) - new Date(a.endTime));
 
             sortedViewers.forEach(viewer => {
@@ -785,11 +692,9 @@
                 const endTime = new Date(viewer.endTime).toLocaleString('ru-RU');
                 const duration = viewer.watchDuration ? ` (${viewer.watchDuration} сек)` : '';
                 
-                // Проверяем, полностью ли просмотрел видео
-                const watchedFully = viewer.watchDuration >= (viewer.videoDuration - 5); // -5 секунд допуск
-                const status = watchedFully ? '✅Кандидат посмотрел инструктаж' : '❌Кандидат не полностью или вообще не смотрел инструктаж';
+                const status = viewer.watchedFully ? '✅Кандидат посмотрел инструктаж' : '❌Кандидат не полностью или вообще не смотрел инструктаж';
                 
-                viewerItem.className = watchedFully ? 'viewer-item' : 'viewer-item incomplete';
+                viewerItem.className = viewer.watchedFully ? 'viewer-item' : 'viewer-item incomplete';
                 
                 viewerItem.innerHTML = `
                     <strong>${viewer.name}</strong><br>
@@ -809,24 +714,6 @@
             document.getElementById(`step${stepNumber}`).classList.add('active');
         }
 
-        function goToStep1() {
-            // Очищаем поле имени
-            document.getElementById('userName').value = '';
-            // Скрываем все сообщения об ошибках
-            document.getElementById('nameError').style.display = 'none';
-            document.getElementById('alreadyWatchedError').style.display = 'none';
-            // Очищаем пароль в админке
-            document.getElementById('adminPassword').value = '';
-            
-            const video = document.getElementById('customVideo');
-            if (video) {
-                video.currentTime = 0;
-                video.pause();
-            }
-            
-            showStep(1);
-        }
-
         // Блокируем контекстное меню
         document.addEventListener('contextmenu', function(e) {
             e.preventDefault();
@@ -836,26 +723,6 @@
         document.addEventListener('keydown', function(e) {
             if (e.key === 'F11' || e.key === 'F12' || (e.ctrlKey && e.key === 'f') || e.key === 'F') {
                 e.preventDefault();
-            }
-        });
-
-        // Дополнительная защита от PiP
-        document.addEventListener('webkitpresentationmodechanged', function(e) {
-            if (e.target.webkitPresentationMode === 'picture-in-picture') {
-                e.target.webkitSetPresentationMode('inline');
-            }
-        });
-
-        // Запрещаем открытие в отдельном окне
-        document.addEventListener('fullscreenchange', function() {
-            if (document.fullscreenElement) {
-                document.exitFullscreen();
-            }
-        });
-
-        document.addEventListener('webkitfullscreenchange', function() {
-            if (document.webkitFullscreenElement) {
-                document.webkitExitFullscreen();
             }
         });
     </script>
