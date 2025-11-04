@@ -1,0 +1,863 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Видео-инструктаж</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Arial', sans-serif;
+        }
+
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .container {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            padding: 40px;
+            max-width: 800px;
+            width: 100%;
+            position: relative;
+        }
+
+        .step {
+            display: none;
+            animation: fadeIn 0.5s ease-in;
+        }
+
+        .step.active {
+            display: block;
+        }
+
+        h1 {
+            color: #333;
+            text-align: center;
+            margin-bottom: 30px;
+            font-size: 2.5em;
+        }
+
+        .form-group {
+            margin-bottom: 25px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            color: #666;
+            font-weight: bold;
+        }
+
+        input[type="text"], input[type="password"] {
+            width: 100%;
+            padding: 15px;
+            border: 2px solid #e1e1e1;
+            border-radius: 10px;
+            font-size: 16px;
+            transition: border-color 0.3s;
+        }
+
+        input[type="text"]:focus, input[type="password"]:focus {
+            border-color: #667eea;
+            outline: none;
+        }
+
+        .btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 10px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: transform 0.2s;
+            width: 100%;
+            margin-top: 20px;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+        }
+
+        .btn-admin {
+            background: #28a745;
+        }
+
+        .btn-clear {
+            background: #dc3545;
+            margin-top: 10px;
+        }
+
+        .btn-confirm {
+            background: #dc3545;
+            margin-right: 10px;
+        }
+
+        .btn-cancel {
+            background: #6c757d;
+        }
+
+        .video-container {
+            position: relative;
+            margin: 30px 0 10px 0;
+        }
+
+        #customVideo {
+            width: 100%;
+            border-radius: 10px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            transition: filter 0.5s ease;
+            /* Полное отключение всех контролов */
+            -webkit-touch-callout: none;
+            -webkit-user-select: none;
+            -khtml-user-select: none;
+            -moz-user-select: none;
+            -ms-user-select: none;
+            user-select: none;
+            pointer-events: none;
+        }
+
+        .video-wrapper {
+            position: relative;
+            display: inline-block;
+            width: 100%;
+        }
+
+        .video-wrapper video {
+            pointer-events: none;
+        }
+
+        /* Полностью убираем ВСЕ стандартные контролы */
+        #customVideo::-webkit-media-controls {
+            display: none !important;
+        }
+
+        #customVideo::-webkit-media-controls-panel {
+            display: none !important;
+        }
+
+        #customVideo::-webkit-media-controls-play-button {
+            display: none !important;
+        }
+
+        #customVideo::-webkit-media-controls-timeline {
+            display: none !important;
+        }
+
+        #customVideo::-webkit-media-controls-current-time-display {
+            display: none !important;
+        }
+
+        #customVideo::-webkit-media-controls-time-remaining-display {
+            display: none !important;
+        }
+
+        #customVideo::-webkit-media-controls-timeline-container {
+            display: none !important;
+        }
+
+        #customVideo::-webkit-media-controls-volume-slider-container {
+            display: none !important;
+        }
+
+        #customVideo::-webkit-media-controls-volume-slider {
+            display: none !important;
+        }
+
+        #customVideo::-webkit-media-controls-mute-button {
+            display: none !important;
+        }
+
+        #customVideo::-webkit-media-controls-toggle-closed-captions-button {
+            display: none !important;
+        }
+
+        #customVideo::-webkit-media-controls-fullscreen-button {
+            display: none !important;
+        }
+
+        #customVideo::-webkit-media-controls-overlay-play-button {
+            display: none !important;
+        }
+
+        #customVideo::-webkit-media-controls-picture-in-picture-button {
+            display: none !important;
+        }
+
+        /* Для Firefox */
+        #customVideo::-moz-media-controls {
+            display: none !important;
+        }
+
+        .completion-overlay {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 40px;
+            border-radius: 20px;
+            text-align: center;
+            color: white;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.3);
+            z-index: 20;
+            display: none;
+            max-width: 90%;
+            animation: slideIn 0.5s ease-out;
+        }
+
+        .completion-overlay.active {
+            display: block;
+        }
+
+        .completion-icon {
+            font-size: 60px;
+            margin-bottom: 20px;
+        }
+
+        .completion-text {
+            font-size: 24px;
+            font-weight: bold;
+            margin-bottom: 30px;
+            line-height: 1.4;
+        }
+
+        .completion-button {
+            background: white;
+            color: #667eea;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .completion-button:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 10px 20px rgba(0,0,0,0.2);
+        }
+
+        .progress-container {
+            background: #f0f0f0;
+            border-radius: 10px;
+            height: 20px;
+            margin: 10px 0;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .progress-bar {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            height: 100%;
+            width: 0%;
+            transition: width 0.3s;
+            border-radius: 10px;
+        }
+
+        .progress-text {
+            text-align: center;
+            color: #666;
+            font-size: 14px;
+            margin-bottom: 5px;
+        }
+
+        .progress-time {
+            display: flex;
+            justify-content: space-between;
+            color: #666;
+            font-size: 12px;
+            margin-top: 5px;
+        }
+
+        .admin-panel {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 20px;
+            margin-top: 30px;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+
+        .viewer-item {
+            background: white;
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 8px;
+            border-left: 4px solid #28a745;
+        }
+
+        .viewer-item.incomplete {
+            border-left-color: #dc3545;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        @keyframes slideIn {
+            from { opacity: 0; transform: translate(-50%, -40%); }
+            to { opacity: 1; transform: translate(-50%, -50%); }
+        }
+
+        .error {
+            color: #dc3545;
+            font-size: 14px;
+            margin-top: 5px;
+            display: none;
+        }
+
+        .already-watched-error {
+            color: #dc3545;
+            font-size: 14px;
+            margin-top: 5px;
+            display: none;
+        }
+
+        .custom-controls {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            margin-top: 15px;
+        }
+
+        .control-btn {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+
+        .control-btn:hover {
+            background: #5a6fd8;
+        }
+
+        .admin-login {
+            background: rgba(0,0,0,0.8);
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+
+        .admin-login.active {
+            display: flex;
+        }
+
+        .login-form {
+            background: white;
+            padding: 40px;
+            border-radius: 15px;
+            max-width: 400px;
+            width: 90%;
+        }
+
+        .confirmation-modal {
+            background: rgba(0,0,0,0.8);
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+
+        .confirmation-modal.active {
+            display: flex;
+        }
+
+        .confirmation-content {
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            max-width: 400px;
+            width: 90%;
+            text-align: center;
+        }
+
+        .confirmation-buttons {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            margin-top: 25px;
+        }
+
+        .confirmation-buttons .btn {
+            width: auto;
+            margin: 0;
+            padding: 12px 25px;
+        }
+    </style>
+</head>
+<body>
+    <!-- Админ-логин -->
+    <div class="admin-login" id="adminLogin">
+        <div class="login-form">
+            <h2>Вход для администрации</h2>
+            <div class="form-group">
+                <label for="adminPassword">Пароль:</label>
+                <input type="password" id="adminPassword" placeholder="Введите пароль" required>
+                <div class="error" id="passwordError">Неверный пароль</div>
+            </div>
+            <button class="btn" onclick="checkAdminPassword()">Войти</button>
+            <button class="btn" onclick="closeAdminLogin()" style="background: #6c757d; margin-top: 10px;">Отмена</button>
+        </div>
+    </div>
+
+    <!-- Модальное окно подтверждения -->
+    <div class="confirmation-modal" id="confirmationModal">
+        <div class="confirmation-content">
+            <h2>Подтверждение действия</h2>
+            <p>Вы уверены, что хотите очистить все завершенные просмотры?</p>
+            <p style="color: #dc3545; font-weight: bold;">Это действие нельзя отменить!</p>
+            <div class="confirmation-buttons">
+                <button class="btn btn-confirm" onclick="confirmClearViewersData()">Да, очистить</button>
+                <button class="btn btn-cancel" onclick="closeConfirmationModal()">Отмена</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="container">
+        <!-- Шаг 1: Регистрация -->
+        <div class="step active" id="step1">
+            <h1>Видео-инструктаж</h1>
+            <div class="form-group">
+                <label for="userName">Ваш игровой никнейм в формате Имя_Фамилия:</label>
+                <input type="text" id="userName" placeholder="Введите ваш никнейм" required>
+                <div class="error" id="nameError">Пожалуйста, введите ваш никнейм</div>
+                <div class="already-watched-error" id="alreadyWatchedError">Вы уже посмотрели инструктаж, ожидайте ответа от управляющей администрации</div>
+            </div>
+            <button class="btn" onclick="validateStep1()">Начать просмотр</button>
+            <button class="btn btn-admin" onclick="openAdminLogin()">Администрация</button>
+        </div>
+
+        <!-- Шаг 2: Просмотр видео -->
+        <div class="step" id="step2">
+            <h1>Инструктаж</h1>
+            
+            <div class="video-container">
+                <div class="video-wrapper">
+                    <video id="customVideo" ontimeupdate="updateProgress()">
+                        <source src="https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4" type="video/mp4">
+                        Ваш браузер не поддерживает видео.
+                    </video>
+                </div>
+                
+                <!-- Красивое окно завершения -->
+                <div class="completion-overlay" id="completionOverlay">
+                    <div class="completion-icon">✅</div>
+                    <div class="completion-text">Ожидайте ответа от управляющей администрации</div>
+                    <button class="completion-button" onclick="watchAgain()">Посмотреть еще раз</button>
+                </div>
+            </div>
+
+            <div class="progress-text">
+                Прогресс просмотра: <span id="progressPercent">0%</span>
+            </div>
+            <div class="progress-container">
+                <div class="progress-bar" id="progressBar"></div>
+            </div>
+            <div class="progress-time">
+                <span id="currentTime">0:00</span>
+                <span id="totalTime">0:00</span>
+            </div>
+
+            <div class="custom-controls" id="customControls">
+                <button class="control-btn" onclick="togglePlay()">⏯️ Пауза/Продолжить</button>
+            </div>
+        </div>
+
+        <!-- Админ-панель -->
+        <div class="step" id="step3">
+            <h1>Панель администрации</h1>
+            <div class="admin-panel">
+                <h2>Завершенные просмотры</h2>
+                <div id="viewersList">
+                    <!-- Сюда добавляются результаты -->
+                </div>
+            </div>
+            <button class="btn btn-clear" onclick="openConfirmationModal()">Очистить завершенные просмотры</button>
+            <button class="btn" onclick="goToStep1()">Вернуться на главную</button>
+        </div>
+    </div>
+
+    <script>
+        // Хранилище данных
+        let viewersData = JSON.parse(localStorage.getItem('viewersData')) || [];
+        let maxAchievedProgress = 0;
+        let videoStartTime = null;
+        let isTabActive = true;
+        let videoDuration = 0;
+
+        // Зашифрованные пароли (base64)
+        const encryptedPasswords = [
+            'VmxhZGltaXJfUXdlcnQ=', // Vladimir_Qwert
+            'U29mYV9Nb3JpYXJ0eQ==', // Sofa_Moriarty
+            'TWF0dGhld19VbmRlcmhpbGw=', // Matthew_Underhill
+            'TGlzYV9Nb3JpYXJ0eQ=='  // Lisa_Moriarty
+        ];
+
+        // Функция для расшифровки пароля
+        function decryptPassword(encrypted) {
+            try {
+                return atob(encrypted);
+            } catch (e) {
+                return null;
+            }
+        }
+
+        function openConfirmationModal() {
+            document.getElementById('confirmationModal').classList.add('active');
+        }
+
+        function closeConfirmationModal() {
+            document.getElementById('confirmationModal').classList.remove('active');
+        }
+
+        function confirmClearViewersData() {
+            viewersData = [];
+            localStorage.setItem('viewersData', JSON.stringify(viewersData));
+            displayViewersList();
+            closeConfirmationModal();
+        }
+
+        // Отслеживаем активность вкладки
+        document.addEventListener('visibilitychange', function() {
+            isTabActive = !document.hidden;
+        });
+
+        // Отслеживаем закрытие окна/вкладки
+        window.addEventListener('beforeunload', function() {
+            if (window.currentViewer && !window.currentViewer.completed) {
+                window.currentViewer.interrupted = true;
+                saveViewerData();
+            }
+        });
+
+        function openAdminLogin() {
+            document.getElementById('adminLogin').classList.add('active');
+        }
+
+        function closeAdminLogin() {
+            document.getElementById('adminLogin').classList.remove('active');
+            document.getElementById('adminPassword').value = ''; // Очищаем пароль
+            document.getElementById('passwordError').style.display = 'none';
+        }
+
+        function checkAdminPassword() {
+            const password = document.getElementById('adminPassword').value.trim();
+            let isValid = false;
+            
+            // Проверяем все зашифрованные пароли
+            for (let encrypted of encryptedPasswords) {
+                const decrypted = decryptPassword(encrypted);
+                if (decrypted === password) {
+                    isValid = true;
+                    break;
+                }
+            }
+            
+            if (isValid) {
+                document.getElementById('adminPassword').value = ''; // Очищаем пароль после входа
+                closeAdminLogin();
+                showAdminPanel();
+            } else {
+                document.getElementById('passwordError').style.display = 'block';
+            }
+        }
+
+        function validateStep1() {
+            const name = document.getElementById('userName').value.trim();
+            let valid = true;
+
+            // Скрываем все ошибки сначала
+            document.getElementById('nameError').style.display = 'none';
+            document.getElementById('alreadyWatchedError').style.display = 'none';
+
+            if (!name) {
+                document.getElementById('nameError').style.display = 'block';
+                valid = false;
+            } else {
+                // Проверяем, смотрел ли уже этот игрок
+                const existingViewer = viewersData.find(viewer => viewer.name === name && viewer.completed);
+                
+                if (existingViewer) {
+                    // Показываем сообщение, что уже смотрел (не пускаем на видео)
+                    document.getElementById('alreadyWatchedError').style.display = 'block';
+                    valid = false;
+                }
+            }
+
+            if (valid) {
+                // Начинаем новый просмотр
+                startViewing(name);
+            }
+        }
+
+        function startViewing(name) {
+            videoStartTime = new Date();
+            
+            // Создаем новую запись для каждого просмотра
+            window.currentViewer = {
+                name: name,
+                startTime: videoStartTime.toISOString(),
+                completed: false,
+                interrupted: false,
+                watchId: Date.now() // Уникальный ID для каждого просмотра
+            };
+
+            showStep(2);
+            
+            const video = document.getElementById('customVideo');
+            const completionOverlay = document.getElementById('completionOverlay');
+            const customControls = document.getElementById('customControls');
+            
+            // Сбрасываем интерфейс
+            completionOverlay.classList.remove('active');
+            customControls.style.display = 'flex';
+            
+            maxAchievedProgress = 0;
+            videoDuration = 0;
+
+            // Сбрасываем видео и прогресс
+            video.currentTime = 0;
+            video.pause();
+            document.getElementById('progressPercent').textContent = '0%';
+            document.getElementById('progressBar').style.width = '0%';
+            document.getElementById('currentTime').textContent = '0:00';
+            document.getElementById('totalTime').textContent = '0:00';
+
+            // Полное отключение контролов
+            video.controls = false;
+            video.removeAttribute('controls');
+            video.setAttribute('disablePictureInPicture', 'true');
+            video.setAttribute('disableRemotePlayback', 'true');
+
+            // Ждем загрузки метаданных для отображения общего времени
+            video.addEventListener('loadedmetadata', function() {
+                videoDuration = video.duration;
+                document.getElementById('totalTime').textContent = formatTime(videoDuration);
+            });
+
+            // Следим за завершением видео
+            video.addEventListener('ended', function() {
+                if (window.currentViewer && !window.currentViewer.completed && isTabActive) {
+                    completeViewing();
+                }
+            });
+
+            // Автовоспроизведение
+            video.play().catch(e => {
+                console.log('Автовоспроизведение заблокировано');
+            });
+        }
+
+        function updateProgress() {
+            const video = document.getElementById('customVideo');
+            if (video.duration && video.duration > 0) {
+                const progress = (video.currentTime / video.duration) * 100;
+                const progressPercent = Math.min(100, Math.round(progress));
+
+                // Обновляем прогресс только если он увеличился
+                if (progressPercent > maxAchievedProgress) {
+                    maxAchievedProgress = progressPercent;
+                    
+                    document.getElementById('progressPercent').textContent = progressPercent + '%';
+                    document.getElementById('progressBar').style.width = progressPercent + '%';
+                    document.getElementById('currentTime').textContent = formatTime(video.currentTime);
+                    
+                    // Обновляем общее время если оно загрузилось
+                    if (videoDuration === 0 && video.duration > 0) {
+                        videoDuration = video.duration;
+                        document.getElementById('totalTime').textContent = formatTime(videoDuration);
+                    }
+                }
+
+                // Блокируем перемотку ВПЕРЕД И НАЗАД
+                const expectedTime = maxAchievedProgress / 100 * video.duration;
+                if (Math.abs(video.currentTime - expectedTime) > 2) {
+                    video.currentTime = expectedTime;
+                }
+            }
+        }
+
+        function formatTime(seconds) {
+            const mins = Math.floor(seconds / 60);
+            const secs = Math.floor(seconds % 60);
+            return `${mins}:${secs < 10 ? '0' : ''}${secs}`;
+        }
+
+        function togglePlay() {
+            const video = document.getElementById('customVideo');
+            if (video.paused) {
+                video.play();
+            } else {
+                video.pause();
+            }
+        }
+
+        function completeViewing() {
+            if (window.currentViewer && !window.currentViewer.completed && isTabActive) {
+                const endTime = new Date();
+                const watchDuration = Math.round((endTime - videoStartTime) / 1000);
+                
+                window.currentViewer.completed = true;
+                window.currentViewer.endTime = endTime.toISOString();
+                window.currentViewer.watchDuration = watchDuration;
+                window.currentViewer.videoDuration = videoDuration;
+                
+                // Показываем красивое окно завершения
+                const completionOverlay = document.getElementById('completionOverlay');
+                const customControls = document.getElementById('customControls');
+                
+                completionOverlay.classList.add('active');
+                customControls.style.display = 'none';
+                
+                // Устанавливаем финальные значения прогресса
+                document.getElementById('progressPercent').textContent = '100%';
+                document.getElementById('progressBar').style.width = '100%';
+                document.getElementById('currentTime').textContent = formatTime(videoDuration);
+                
+                saveViewerData();
+            }
+        }
+
+        function watchAgain() {
+            // Очищаем поле имени
+            document.getElementById('userName').value = '';
+            // Скрываем сообщение о уже просмотренном
+            document.getElementById('alreadyWatchedError').style.display = 'none';
+            showStep(1);
+        }
+
+        function saveViewerData() {
+            if (window.currentViewer && window.currentViewer.completed) {
+                // Всегда добавляем новую запись (даже если имя повторяется)
+                viewersData.push({...window.currentViewer});
+                localStorage.setItem('viewersData', JSON.stringify(viewersData));
+            }
+        }
+
+        function showAdminPanel() {
+            displayViewersList();
+            showStep(3);
+        }
+
+        function displayViewersList() {
+            const viewersList = document.getElementById('viewersList');
+            viewersList.innerHTML = '';
+
+            if (viewersData.length === 0) {
+                viewersList.innerHTML = '<p>Пока нет завершенных просмотров.</p>';
+                return;
+            }
+
+            // Сортируем по времени (новые сверху)
+            const sortedViewers = [...viewersData].sort((a, b) => new Date(b.endTime) - new Date(a.endTime));
+
+            sortedViewers.forEach(viewer => {
+                const viewerItem = document.createElement('div');
+                
+                const startTime = new Date(viewer.startTime).toLocaleString('ru-RU');
+                const endTime = new Date(viewer.endTime).toLocaleString('ru-RU');
+                const duration = viewer.watchDuration ? ` (${viewer.watchDuration} сек)` : '';
+                
+                // Проверяем, полностью ли просмотрел видео
+                const watchedFully = viewer.watchDuration >= (viewer.videoDuration - 5); // -5 секунд допуск
+                const status = watchedFully ? '✅Кандидат посмотрел инструктаж' : '❌Кандидат не полностью или вообще не смотрел инструктаж';
+                
+                viewerItem.className = watchedFully ? 'viewer-item' : 'viewer-item incomplete';
+                
+                viewerItem.innerHTML = `
+                    <strong>${viewer.name}</strong><br>
+                    ${status}<br>
+                    Начало просмотра: ${startTime}<br>
+                    Завершение просмотра: ${endTime}${duration}
+                `;
+                
+                viewersList.appendChild(viewerItem);
+            });
+        }
+
+        function showStep(stepNumber) {
+            document.querySelectorAll('.step').forEach(step => {
+                step.classList.remove('active');
+            });
+            document.getElementById(`step${stepNumber}`).classList.add('active');
+        }
+
+        function goToStep1() {
+            // Очищаем поле имени
+            document.getElementById('userName').value = '';
+            // Скрываем все сообщения об ошибках
+            document.getElementById('nameError').style.display = 'none';
+            document.getElementById('alreadyWatchedError').style.display = 'none';
+            // Очищаем пароль в админке
+            document.getElementById('adminPassword').value = '';
+            
+            const video = document.getElementById('customVideo');
+            if (video) {
+                video.currentTime = 0;
+                video.pause();
+            }
+            
+            showStep(1);
+        }
+
+        // Блокируем контекстное меню
+        document.addEventListener('contextmenu', function(e) {
+            e.preventDefault();
+        });
+
+        // Блокируем горячие клавиши
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'F11' || e.key === 'F12' || (e.ctrlKey && e.key === 'f') || e.key === 'F') {
+                e.preventDefault();
+            }
+        });
+
+        // Дополнительная защита от PiP
+        document.addEventListener('webkitpresentationmodechanged', function(e) {
+            if (e.target.webkitPresentationMode === 'picture-in-picture') {
+                e.target.webkitSetPresentationMode('inline');
+            }
+        });
+
+        // Запрещаем открытие в отдельном окне
+        document.addEventListener('fullscreenchange', function() {
+            if (document.fullscreenElement) {
+                document.exitFullscreen();
+            }
+        });
+
+        document.addEventListener('webkitfullscreenchange', function() {
+            if (document.webkitFullscreenElement) {
+                document.webkitExitFullscreen();
+            }
+        });
+    </script>
+</body>
+</html>
