@@ -406,22 +406,18 @@
 </head>
 <body>
     <!-- Админ-логин -->
-<div class="admin-login" id="adminLogin">
-    <div class="login-form">
-        <h2>Вход для администрации</h2>
-        
-        <!-- ПЕРЕНЕСИТЕ ЭТОТ БЛОК ВНИЗ -->
-        <button class="btn" onclick="checkAdminPassword()">Войти</button>
-        
-        <div class="form-group">
-            <input type="password" id="adminPassword" placeholder="Введите пароль" required>
-            <div class="error" id="passwordEmptyError">Пожалуйста, введите ваш пароль</div>
-            <div class="error" id="passwordError">Неверный пароль</div>
+    <div class="admin-login" id="adminLogin">
+        <div class="login-form">
+            <h2>Вход для администрации</h2>
+            <div class="form-group">
+                <input type="password" id="adminPassword" placeholder="Введите пароль" required>
+                <div class="error" id="passwordEmptyError">Пожалуйста, введите ваш пароль</div>
+                <div class="error" id="passwordError">Неверный пароль</div>
+            </div>
+            <button class="btn" onclick="checkAdminPassword()">Войти</button>
+            <button class="btn" onclick="closeAdminLogin()" style="background: #6c757d; margin-top: 10px;">Отмена</button>
         </div>
-        
-        <button class="btn" onclick="closeAdminLogin()" style="background: #6c757d; margin-top: 10px;">Отмена</button>
     </div>
-</div>
 
     <!-- Модальное окно подтверждения -->
     <div class="confirmation-modal" id="confirmationModal">
