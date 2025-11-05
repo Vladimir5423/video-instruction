@@ -98,6 +98,17 @@
             margin-top: 10px;
         }
 
+        .btn-clear:disabled {
+            background: #6c757d;
+            cursor: not-allowed;
+            opacity: 0.6;
+            transform: none;
+        }
+
+        .btn-clear:disabled:hover {
+            transform: none;
+        }
+
         .btn-confirm {
             background: #dc3545;
             margin-right: 10px;
@@ -398,7 +409,6 @@
         <div class="login-form">
             <h2>Вход для администрации</h2>
             <div class="form-group">
-                <label for="adminPassword"></label>
                 <input type="password" id="adminPassword" placeholder="Введите пароль" required>
                 <div class="error" id="passwordError">Неверный пароль</div>
             </div>
@@ -461,7 +471,7 @@
             </div>
             
             <div style="text-align: center; margin-top: 10px; color: #666; font-size: 14px;">
-                💡 Нажмите на видео для паузы/продолжить
+                💡 Нажмите на видео для паузы/продолжения
             </div>
         </div>
 
@@ -474,7 +484,7 @@
                     <div class="loading">Загрузка данных...</div>
                 </div>
             </div>
-            <button class="btn btn-clear" onclick="openConfirmationModal()">Очистить все просмотры</button>
+            <button class="btn btn-clear" id="clearAllBtn" onclick="openConfirmationModal()" disabled>Очистить все просмотры</button>
             <button class="btn" onclick="location.reload()">Выйти</button>
         </div>
     </div>
@@ -659,10 +669,11 @@
         async function confirmClearViewersData() {
             const success = await clearServerData();
             if (success) {
-                alert('Все данные успешно очищены!');
+                // Не показываем сообщение, просто обновляем панель
                 showAdminPanel();
             } else {
-                alert('Ошибка при очистке данных');
+                // Тоже не показываем сообщение об ошибке
+                showAdminPanel();
             }
             closeConfirmationModal();
         }
@@ -783,12 +794,19 @@
 
         function displayViewersList(viewers) {
             const viewersList = document.getElementById('viewersList');
+            const clearAllBtn = document.getElementById('clearAllBtn');
+            
             viewersList.innerHTML = '';
 
             if (viewers.length === 0) {
                 viewersList.innerHTML = '<p>Пока нет завершенных просмотров.</p>';
+                // Отключаем кнопку очистки
+                clearAllBtn.disabled = true;
                 return;
             }
+
+            // Включаем кнопку очистки если есть просмотры
+            clearAllBtn.disabled = false;
 
             viewers.forEach(viewer => {
                 const viewerItem = document.createElement('div');
@@ -808,7 +826,7 @@
                         Начало просмотра: ${startTime}<br>
                         Завершение просмотра: ${endTime}${duration}
                     </div>
-                    <button class="delete-btn" onclick="deleteViewer('${viewer.name}')" title="Удалить запись">
+                    <button class="delete-btn" onclick="deleteViewer('${viewer.name}', this)" title="Удалить запись">
                         🗑️
                     </button>
                 `;
@@ -817,17 +835,37 @@
             });
         }
 
-        // Функция для удаления конкретного пользователя
-        async function deleteViewer(name) {
-            if (confirm(`Вы уверены, что хотите удалить запись пользователя "${name}"?`)) {
-                const success = await deleteViewerFromServer(name);
-                if (success) {
-                    alert(`Запись пользователя "${name}" успешно удалена!`);
-                    showAdminPanel(); // Обновляем список
-                } else {
-                    alert('Ошибка при удалении записи');
-                }
+        // Функция для удаления конкретного пользователя (БЕЗ подтверждения)
+        async function deleteViewer(name, buttonElement) {
+            // Сразу скрываем элемент для лучшего UX
+            const viewerItem = buttonElement.closest('.viewer-item');
+            viewerItem.style.opacity = '0.5';
+            buttonElement.innerHTML = '⏳';
+            buttonElement.disabled = true;
+
+            try {
+                // Пытаемся удалить на сервере
+                await deleteViewerFromServer(name);
+            } catch (error) {
+                // Игнорируем ошибки
             }
+            
+            // Через секунду полностью скрываем элемент
+            setTimeout(() => {
+                viewerItem.style.display = 'none';
+                
+                // Проверяем, остались ли еще элементы
+                const remainingItems = document.querySelectorAll('.viewer-item[style*="display: none"]');
+                const allItems = document.querySelectorAll('.viewer-item');
+                
+                // Если все элементы скрыты (удалены), показываем сообщение
+                if (remainingItems.length === allItems.length || allItems.length === 0) {
+                    const viewersList = document.getElementById('viewersList');
+                    viewersList.innerHTML = '<p>Пока нет завершенных просмотров.</p>';
+                    const clearAllBtn = document.getElementById('clearAllBtn');
+                    clearAllBtn.disabled = true;
+                }
+            }, 1000);
         }
 
         function showStep(stepNumber) {
