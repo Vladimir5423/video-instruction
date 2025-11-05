@@ -4,11 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Видео-инструктаж</title>
-    
-    <!-- Добавляем Firebase -->
-    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore-compat.js"></script>
-    
     <style>
         * {
             margin: 0;
@@ -290,12 +285,6 @@
             background: #c82333;
         }
 
-        .loading {
-            text-align: center;
-            padding: 20px;
-            color: #666;
-        }
-
         .connection-status {
             position: fixed;
             top: 10px;
@@ -406,9 +395,9 @@
     </style>
 </head>
 <body>
-    <!-- Индикатор подключения -->
+    <!-- Статус подключения -->
     <div class="connection-status connection-online" id="connectionStatus">
-        ✅ Онлайн
+        ✅ Сервер онлайн
     </div>
 
     <!-- Админ-логин -->
@@ -498,33 +487,13 @@
     </div>
 
     <script>
-        // 🔥 Firebase Configuration - ЗАМЕНИТЕ НА ВАШИ ДАННЫЕ!
-        const firebaseConfig = {
-  apiKey: "AIzaSyArKjXgTWUcuo-zdWKa3RQBXJrWKlhfuDE",
-  authDomain: "video-instruction-app.firebaseapp.com",
-  projectId: "video-instruction-app",
-  storageBucket: "video-instruction-app.firebasestorage.app",
-  messagingSenderId: "214860071579",
-  appId: "1:214860071579:web:c0f6e962fe3aed87d03c3e"
-        };
-        
+        // 🔥 URL ВАШЕГО СЕРВЕРА
+        const SERVER_URL = "https://video-instruction-server.onrender.com";
 
-        // Инициализация Firebase
-        try {
-            firebase.initializeApp(firebaseConfig);
-            console.log("✅ Firebase инициализирован");
-        } catch (error) {
-            console.error("❌ Ошибка Firebase:", error);
-        }
-        
-        const db = firebase.firestore();
-
-        // Глобальные переменные
+        let currentViewer = null;
         let videoStartTime = null;
-        let isTabActive = true;
         let videoPlayer = null;
         let pauseIndicator = null;
-        let pauseIndicatorTimeout = null;
 
         // Зашифрованные пароли (base64)
         const encryptedPasswords = [
@@ -543,95 +512,84 @@
             }
         }
 
-        // 🔥 Firebase функции
+        // 🔥 СЕРВЕРНЫЕ ФУНКЦИИ
 
         // Проверить, смотрел ли пользователь уже видео
         async function checkIfAlreadyWatched(name) {
             try {
-                const snapshot = await db.collection('viewers')
-                    .where('name', '==', name)
-                    .where('completed', '==', true)
-                    .get();
-                
-                return !snapshot.empty;
+                const response = await fetch(`${SERVER_URL}/viewers/check/${encodeURIComponent(name)}`);
+                const data = await response.json();
+                return data.watched;
             } catch (error) {
                 console.error('Ошибка проверки:', error);
+                updateConnectionStatus(false);
                 return false;
             }
         }
 
-        // Сохранить данные просмотра в Firebase
-        async function saveViewerToFirebase(viewerData) {
+        // Сохранить данные просмотра на сервер
+        async function saveViewerToServer(viewerData) {
             try {
-                await db.collection('viewers').add({
-                    ...viewerData,
-                    timestamp: firebase.firestore.FieldValue.serverTimestamp()
+                const response = await fetch(`${SERVER_URL}/viewers`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(viewerData)
                 });
+                const data = await response.json();
+                console.log("✅ Сохранено на сервере:", viewerData.name);
+                updateConnectionStatus(true);
                 return true;
             } catch (error) {
                 console.error('Ошибка сохранения:', error);
+                updateConnectionStatus(false);
                 return false;
             }
         }
 
-        // Получить все просмотры для админ-панели
-        async function getAllViewers() {
+        // Получить все просмотры с сервера
+        async function getAllViewersFromServer() {
             try {
-                const snapshot = await db.collection('viewers')
-                    .orderBy('timestamp', 'desc')
-                    .get();
-                
-                return snapshot.docs.map(doc => ({
-                    id: doc.id,
-                    ...doc.data()
-                }));
+                const response = await fetch(`${SERVER_URL}/viewers`);
+                const data = await response.json();
+                console.log("✅ Данные с сервера:", data.length);
+                updateConnectionStatus(true);
+                return data;
             } catch (error) {
                 console.error('Ошибка загрузки:', error);
+                updateConnectionStatus(false);
                 return [];
             }
         }
 
-        // Удалить один просмотр
-        async function deleteViewer(viewerId) {
+        // Очистить все данные на сервере
+        async function clearServerData() {
             try {
-                await db.collection('viewers').doc(viewerId).delete();
-                return true;
-            } catch (error) {
-                console.error('Ошибка удаления:', error);
-                return false;
-            }
-        }
-
-        // Очистить все просмотры
-        async function clearAllViewers() {
-            try {
-                const snapshot = await db.collection('viewers').get();
-                const batch = db.batch();
-                
-                snapshot.docs.forEach(doc => {
-                    batch.delete(doc.ref);
+                const response = await fetch(`${SERVER_URL}/viewers`, {
+                    method: 'DELETE'
                 });
-                
-                await batch.commit();
+                const data = await response.json();
+                console.log("✅ Сервер очищен");
+                updateConnectionStatus(true);
                 return true;
             } catch (error) {
                 console.error('Ошибка очистки:', error);
+                updateConnectionStatus(false);
                 return false;
             }
         }
 
-        // Отслеживать изменения в реальном времени
-        function setupRealtimeListener() {
-            return db.collection('viewers')
-                .orderBy('timestamp', 'desc')
-                .onSnapshot(snapshot => {
-                    displayViewersList(snapshot.docs.map(doc => ({
-                        id: doc.id,
-                        ...doc.data()
-                    })));
-                }, error => {
-                    console.error('Ошибка реального времени:', error);
-                });
+        // Обновить статус подключения
+        function updateConnectionStatus(online) {
+            const statusElement = document.getElementById('connectionStatus');
+            if (online) {
+                statusElement.className = 'connection-status connection-online';
+                statusElement.textContent = '✅ Сервер онлайн';
+            } else {
+                statusElement.className = 'connection-status connection-offline';
+                statusElement.textContent = '❌ Сервер оффлайн';
+            }
         }
 
         // Функция для переключения паузы/продолжения
@@ -651,8 +609,7 @@
         function showPauseIndicator() {
             if (pauseIndicator) {
                 pauseIndicator.classList.add('active');
-                clearTimeout(pauseIndicatorTimeout);
-                pauseIndicatorTimeout = setTimeout(() => {
+                setTimeout(() => {
                     hidePauseIndicator();
                 }, 2000);
             }
@@ -671,6 +628,7 @@
             pauseIndicator = document.getElementById('pauseIndicator');
             const videoContainer = document.getElementById('videoContainer');
             
+            // Обработчик клика по контейнеру видео
             videoContainer.addEventListener('click', function(e) {
                 if (!e.target.closest('.completion-overlay')) {
                     togglePlayPause();
@@ -678,22 +636,26 @@
             });
             
             videoPlayer.addEventListener('ended', function() {
-                if (window.currentViewer && !window.currentViewer.completed && isTabActive) {
+                if (currentViewer && !currentViewer.completed) {
                     completeViewing();
                 }
             });
             
+            // Убираем стандартные элементы управления
             videoPlayer.controls = false;
             
+            // Блокируем контекстное меню на видео
             videoPlayer.addEventListener('contextmenu', function(e) {
                 e.preventDefault();
                 return false;
             });
             
+            // Скрываем индикатор при воспроизведении
             videoPlayer.addEventListener('play', function() {
                 hidePauseIndicator();
             });
 
+            // Сбрасываем видео при каждом новом просмотре
             videoPlayer.currentTime = 0;
         }
 
@@ -706,19 +668,15 @@
         }
 
         async function confirmClearViewersData() {
-            const success = await clearAllViewers();
+            const success = await clearServerData();
             if (success) {
                 alert('Все данные успешно очищены!');
+                showAdminPanel();
             } else {
                 alert('Ошибка при очистке данных');
             }
             closeConfirmationModal();
         }
-
-        // Отслеживаем активность вкладки
-        document.addEventListener('visibilitychange', function() {
-            isTabActive = !document.hidden;
-        });
 
         function openAdminLogin() {
             document.getElementById('adminLogin').classList.add('active');
@@ -762,7 +720,7 @@
                 document.getElementById('nameError').style.display = 'block';
                 valid = false;
             } else {
-                // 🔥 Проверяем в Firebase, а не в LocalStorage
+                // 🔥 Проверяем на сервере
                 const alreadyWatched = await checkIfAlreadyWatched(name);
                 
                 if (alreadyWatched) {
@@ -779,11 +737,10 @@
         function startViewing(name) {
             videoStartTime = new Date();
             
-            window.currentViewer = {
+            currentViewer = {
                 name: name,
                 startTime: videoStartTime.toISOString(),
                 completed: false,
-                interrupted: false,
                 watchId: Date.now()
             };
 
@@ -792,6 +749,7 @@
             const completionOverlay = document.getElementById('completionOverlay');
             completionOverlay.classList.remove('active');
 
+            // Инициализируем и запускаем видео
             initVideoPlayer();
             
             const playPromise = videoPlayer.play();
@@ -803,22 +761,23 @@
         }
 
         async function completeViewing() {
-            if (window.currentViewer && !window.currentViewer.completed && isTabActive) {
+            if (currentViewer && !currentViewer.completed && videoStartTime) {
                 const endTime = new Date();
                 const watchDuration = Math.round((endTime - videoStartTime) / 1000);
                 
+                // Проверяем просмотрено ли 9:37 (577 секунд) или больше
                 const watchedFully = watchDuration >= 577;
                 
-                window.currentViewer.completed = true;
-                window.currentViewer.endTime = endTime.toISOString();
-                window.currentViewer.watchDuration = watchDuration;
-                window.currentViewer.watchedFully = watchedFully;
+                currentViewer.completed = true;
+                currentViewer.endTime = endTime.toISOString();
+                currentViewer.watchDuration = watchDuration;
+                currentViewer.watchedFully = watchedFully;
                 
                 const completionOverlay = document.getElementById('completionOverlay');
                 completionOverlay.classList.add('active');
                 
-                // 🔥 Сохраняем в Firebase
-                const success = await saveViewerToFirebase(window.currentViewer);
+                // 🔥 Сохраняем на сервер
+                const success = await saveViewerToServer(currentViewer);
                 if (!success) {
                     alert('Ошибка сохранения данных. Попробуйте еще раз.');
                 }
@@ -828,34 +787,30 @@
         async function showAdminPanel() {
             showStep(3);
             
-            // Загружаем данные и настраиваем реальное время
-            const viewers = await getAllViewers();
+            // Загружаем данные с сервера
+            const viewers = await getAllViewersFromServer();
             displayViewersList(viewers);
-            
-            // Слушаем изменения в реальном времени
-            window.realtimeListener = setupRealtimeListener();
         }
 
         function displayViewersList(viewers) {
             const viewersList = document.getElementById('viewersList');
-            
-            if (!viewers || viewers.length === 0) {
+            viewersList.innerHTML = '';
+
+            if (viewers.length === 0) {
                 viewersList.innerHTML = '<p>Пока нет завершенных просмотров.</p>';
                 return;
             }
 
-            viewersList.innerHTML = '';
-
             viewers.forEach(viewer => {
                 const viewerItem = document.createElement('div');
                 
-                const startTime = viewer.startTime ? new Date(viewer.startTime).toLocaleString('ru-RU') : 'Неизвестно';
-                const endTime = viewer.endTime ? new Date(viewer.endTime).toLocaleString('ru-RU') : 'Неизвестно';
-                const duration = viewer.watchDuration ? ` (${viewer.watchDuration} сек)` : '';
+                const startTime = new Date(viewer.start_time).toLocaleString('ru-RU');
+                const endTime = new Date(viewer.end_time).toLocaleString('ru-RU');
+                const duration = viewer.watch_duration ? ` (${viewer.watch_duration} сек)` : '';
                 
-                const status = viewer.watchedFully ? '✅Кандидат посмотрел инструктаж' : '❌Кандидат не полностью или вообще не смотрел инструктаж';
+                const status = viewer.watched_fully ? '✅Кандидат посмотрел инструктаж' : '❌Кандидат не полностью или вообще не смотрел инструктаж';
                 
-                viewerItem.className = viewer.watchedFully ? 'viewer-item' : 'viewer-item incomplete';
+                viewerItem.className = viewer.watched_fully ? 'viewer-item' : 'viewer-item incomplete';
                 
                 viewerItem.innerHTML = `
                     <div class="viewer-content">
@@ -864,20 +819,10 @@
                         Начало просмотра: ${startTime}<br>
                         Завершение просмотра: ${endTime}${duration}
                     </div>
-                    <button class="delete-btn" onclick="deleteViewerItem('${viewer.id}')">🗑️</button>
                 `;
                 
                 viewersList.appendChild(viewerItem);
             });
-        }
-
-        async function deleteViewerItem(viewerId) {
-            if (confirm('Вы уверены, что хотите удалить эту запись?')) {
-                const success = await deleteViewer(viewerId);
-                if (!success) {
-                    alert('Ошибка при удалении записи');
-                }
-            }
         }
 
         function showStep(stepNumber) {
@@ -899,16 +844,17 @@
             }
         });
 
-        // Очистка при закрытии страницы
-        window.addEventListener('beforeunload', function() {
-            if (window.realtimeListener) {
-                window.realtimeListener();
-            }
-        });
-
-        // Инициализация при загрузке
+        // Проверка подключения при загрузке
         document.addEventListener('DOMContentLoaded', function() {
-            console.log("🚀 Приложение загружено");
+            // Проверяем здоровье сервера
+            fetch(`${SERVER_URL}/health`)
+                .then(response => response.json())
+                .then(data => {
+                    updateConnectionStatus(true);
+                })
+                .catch(error => {
+                    updateConnectionStatus(false);
+                });
         });
     </script>
 </body>
