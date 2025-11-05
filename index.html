@@ -398,7 +398,6 @@
         <div class="login-form">
             <h2>Вход для администрации</h2>
             <div class="form-group">
-                <label for="adminPassword">Пароль:</label>
                 <input type="password" id="adminPassword" placeholder="Введите пароль" required>
                 <div class="error" id="passwordError">Неверный пароль</div>
             </div>
@@ -423,14 +422,14 @@
     <div class="container">
         <!-- Шаг 1: Регистрация -->
         <div class="step active" id="step1">
-            <h1>Видео-инструктаж</h1>
+            <h1>Инструктаж</h1>
             <div class="form-group">
                 <label for="userName">Ваш игровой никнейм в формате Имя_Фамилия:</label>
                 <input type="text" id="userName" placeholder="Введите ваш никнейм" required>
                 <div class="error" id="nameError">Пожалуйста, введите ваш никнейм</div>
                 <div class="already-watched-error" id="alreadyWatchedError">Вы уже посмотрели инструктаж, ожидайте ответа от управляющей администрации</div>
             </div>
-            <button class="btn" onclick="validateStep1()">Начать просмотр</button>
+            <button class="btn" onclick="validateStep1()">Начать</button>
             <button class="btn btn-admin" onclick="openAdminLogin()">Администрация</button>
         </div>
 
@@ -461,7 +460,7 @@
             </div>
             
             <div style="text-align: center; margin-top: 10px; color: #666; font-size: 14px;">
-                💡 Нажмите на видео для паузы/продолжения
+                💡 Нажмите на видео для паузы/продолжить
             </div>
         </div>
 
