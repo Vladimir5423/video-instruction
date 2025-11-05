@@ -766,7 +766,7 @@
                 const watchDuration = Math.round((endTime - videoStartTime) / 1000);
                 
                 // Проверяем просмотрено ли 9:37 (577 секунд) или больше
-                const watchedFully = watchDuration >= 577;
+                const watchedFully = watchDuration >= 11;
                 
                 currentViewer.completed = true;
                 currentViewer.endTime = endTime.toISOString();
