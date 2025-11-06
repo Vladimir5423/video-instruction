@@ -122,7 +122,6 @@
         .video-container {
             position: relative;
             margin: 30px 0 10px 0;
-            background: #000;
             border-radius: 15px;
             overflow: hidden;
             cursor: pointer;
@@ -130,20 +129,29 @@
             box-shadow: 0 10px 30px rgba(102, 126, 234, 0.3);
             padding: 3px;
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            /* Адаптивные стили */
+            width: fit-content;
+            max-width: 100%;
+            height: fit-content;
+            margin-left: auto;
+            margin-right: auto;
         }
 
         .video-inner {
             border-radius: 12px;
             overflow: hidden;
-            height: 100%;
+            line-height: 0;
+            background: #000;
         }
 
         #customVideo {
             width: 100%;
+            height: auto;
             display: block;
             -webkit-appearance: none;
             -moz-appearance: none;
             appearance: none;
+            max-width: 100%;
         }
 
         /* Скрываем все элементы управления */
@@ -202,42 +210,55 @@
             display: flex;
         }
 
-        .completion-overlay {
+        /* Сообщение после завершения видео */
+        .completion-message {
             position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
+            top: 3px;
+            left: 3px;
+            width: calc(100% - 6px);
+            height: calc(100% - 6px);
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            padding: 40px;
-            border-radius: 20px;
-            text-align: center;
-            color: white;
-            box-shadow: 0 20px 40px rgba(0,0,0,0.3);
-            z-index: 20;
             display: none;
-            max-width: 90%;
-            animation: slideIn 0.5s ease-out;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            text-align: center;
+            border-radius: 9px;
+            z-index: 20;
+            padding: 20px;
+            box-sizing: border-box;
         }
 
-        .completion-overlay.active {
-            display: block;
+        .completion-message.active {
+            display: flex;
         }
 
         .completion-icon {
-            font-size: 60px;
-            margin-bottom: 20px;
+            font-size: 12vw;
+            margin-bottom: 3vw;
+            max-width: 100%;
         }
 
         .completion-text {
-            font-size: 24px;
+            font-size: 4vw;
             font-weight: bold;
-            margin-bottom: 30px;
+            margin-bottom: 0; /* Убираем отступ снизу */
             line-height: 1.4;
+            max-width: 100%;
+            padding: 0 10px;
         }
 
-        .completion-button {
-            background: white;
-            color: #667eea;
+        /* Кнопка выхода под видео */
+        .exit-button-container {
+            text-align: center;
+            margin-top: 20px;
+            display: none;
+        }
+
+        .exit-button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
             border: none;
             padding: 15px 30px;
             border-radius: 10px;
@@ -245,11 +266,40 @@
             font-weight: bold;
             cursor: pointer;
             transition: transform 0.2s, box-shadow 0.2s;
+            min-width: 150px;
         }
 
-        .completion-button:hover {
+        .exit-button:hover {
             transform: translateY(-3px);
             box-shadow: 0 10px 20px rgba(0,0,0,0.2);
+        }
+
+        /* Медиа-запросы для адаптивности */
+        @media (min-width: 768px) {
+            .completion-icon {
+                font-size: 60px;
+                margin-bottom: 20px;
+            }
+            
+            .completion-text {
+                font-size: 24px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .completion-icon {
+                font-size: 40px;
+                margin-bottom: 15px;
+            }
+            
+            .completion-text {
+                font-size: 18px;
+            }
+            
+            .exit-button {
+                padding: 12px 25px;
+                min-width: 120px;
+            }
         }
 
         .admin-panel {
@@ -352,7 +402,7 @@
             border-radius: 15px;
             max-width: 400px;
             width: 90%;
-            margin-top: 0px; /* ← ДОБАВЬТЕ ЭТУ СТРОЧКУ */
+            margin-top: 0px;
         }
 
         .confirmation-modal {
@@ -465,16 +515,20 @@
                     </video>
                 </div>
                 
-                <!-- Красивое окно завершения -->
-                <div class="completion-overlay" id="completionOverlay">
+                <!-- Сообщение после завершения видео -->
+                <div class="completion-message" id="completionMessage">
                     <div class="completion-icon">✅</div>
                     <div class="completion-text">Ожидайте ответа от управляющей администрации</div>
-                    <button class="completion-button" onclick="location.reload()">Выйти</button>
                 </div>
             </div>
             
             <div style="text-align: center; margin-top: 10px; color: #666; font-size: 14px;">
                 💡 Нажмите на видео для паузы/продолжения
+            </div>
+
+            <!-- Кнопка выхода под видео -->
+            <div class="exit-button-container" id="exitButtonContainer">
+                <button class="exit-button" onclick="location.reload()">Выйти</button>
             </div>
         </div>
 
@@ -632,7 +686,9 @@
             
             // Обработчик клика по контейнеру видео
             videoContainer.addEventListener('click', function(e) {
-                if (!e.target.closest('.completion-overlay')) {
+                // Блокируем клики если видео уже завершено
+                const completionMessage = document.getElementById('completionMessage');
+                if (!completionMessage.classList.contains('active')) {
                     togglePlayPause();
                 }
             });
@@ -761,8 +817,11 @@
 
             showStep(2);
             
-            const completionOverlay = document.getElementById('completionOverlay');
-            completionOverlay.classList.remove('active');
+            // Скрываем сообщение о завершении и кнопку выхода
+            const completionMessage = document.getElementById('completionMessage');
+            const exitButtonContainer = document.getElementById('exitButtonContainer');
+            completionMessage.classList.remove('active');
+            exitButtonContainer.style.display = 'none';
 
             // Инициализируем и запускаем видео
             initVideoPlayer();
@@ -788,8 +847,15 @@
                 currentViewer.watchDuration = watchDuration;
                 currentViewer.watchedFully = watchedFully;
                 
-                const completionOverlay = document.getElementById('completionOverlay');
-                completionOverlay.classList.add('active');
+                // Показываем сообщение поверх видео и кнопку выхода под видео
+                const completionMessage = document.getElementById('completionMessage');
+                const exitButtonContainer = document.getElementById('exitButtonContainer');
+                completionMessage.classList.add('active');
+                exitButtonContainer.style.display = 'block';
+                
+                // Останавливаем видео и делаем его невидимым
+                videoPlayer.pause();
+                videoPlayer.style.opacity = '0';
                 
                 // 🔥 Сохраняем на сервер
                 const success = await saveViewerToServer(currentViewer);
