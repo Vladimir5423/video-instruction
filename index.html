@@ -462,7 +462,7 @@
             justify-content: space-between;
             align-items: flex-start;
             gap: 15px;
-            transition: transform 0.2s, box-shadow 0.2s;
+            transition: all 0.3s ease;
         }
 
         .viewer-item:hover {
@@ -631,6 +631,22 @@
             padding: 12px 25px;
         }
 
+        .test-buttons {
+            display: flex;
+            gap: 10px;
+            margin: 10px 0;
+        }
+
+        .test-btn {
+            background: #17a2b8;
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+
         @keyframes fadeIn {
             from { opacity: 0; transform: translateY(20px); }
             to { opacity: 1; transform: translateY(0); }
@@ -755,6 +771,13 @@
         <!-- Админ-панель -->
         <div class="step" id="step3">
             <h1>Панель администрации</h1>
+            
+            <!-- Кнопки для тестирования -->
+            <div class="test-buttons">
+                <button class="test-btn" onclick="addTestViewer()">➕ Тест запись</button>
+                <button class="test-btn" onclick="testAllEndpoints()">🧪 Тест API</button>
+            </div>
+
             <div class="admin-panel">
                 <h2>Завершенные просмотры</h2>
                 <div id="viewersList">
@@ -767,8 +790,8 @@
     </div>
 
     <script>
-        // 🔥 URL ВАШЕГО СЕРВЕРА на Render
-        const SERVER_URL = "https://video-instruction-server.onrender.com"; // ЗАМЕНИТЕ на ваш URL
+        // 🔥 URL ВАШЕГО СЕРВЕРА на Render - ЗАМЕНИТЕ НА ВАШ!
+        const SERVER_URL = "https://video-instruction-server.onrender.com";
 
         let currentViewer = null;
         let videoStartTime = null;
@@ -779,9 +802,65 @@
         // 🔐 СЕКРЕТНЫЙ ПАРОЛЬ для доступа к управлению паролями
         const SECRET_PASSWORD = "smena";
 
-        // 🔐 Функции для работы с паролями через базу данных
+        // 🔧 ТЕСТОВЫЕ ФУНКЦИИ
+        function addTestViewer() {
+            const testViewer = {
+                name: 'Test_User_' + Date.now(),
+                start_time: new Date().toISOString(),
+                end_time: new Date().toISOString(),
+                watch_duration: 120,
+                watched_fully: true
+            };
+            
+            const viewersList = document.getElementById('viewersList');
+            const viewerItem = document.createElement('div');
+            viewerItem.className = 'viewer-item';
+            viewerItem.innerHTML = `
+                <div class="viewer-content">
+                    <strong>${testViewer.name}</strong><br>
+                    ✅ Тестовая запись<br>
+                    Начало: ${new Date().toLocaleString('ru-RU')}<br>
+                    Завершение: ${new Date().toLocaleString('ru-RU')} (120 сек)
+                </div>
+                <button class="delete-btn" onclick="deleteViewer('${testViewer.name}', this)" title="Удалить запись">
+                    🗑️
+                </button>
+            `;
+            viewersList.appendChild(viewerItem);
+            
+            // Обновляем кнопку очистки
+            document.getElementById('clearAllBtn').disabled = false;
+            
+            console.log("✅ Добавлена тестовая запись:", testViewer.name);
+        }
 
-        // Получить все пароли с сервера
+        async function testAllEndpoints() {
+            console.log("🧪 Тестируем API endpoints...");
+            
+            try {
+                // Тест health
+                const healthResponse = await fetch(`${SERVER_URL}/health`);
+                console.log("Health:", await healthResponse.json());
+                
+                // Тест viewers
+                const viewersResponse = await fetch(`${SERVER_URL}/viewers`);
+                const viewers = await viewersResponse.json();
+                console.log("Viewers:", viewers);
+                
+                // Тест passwords
+                const passwordsResponse = await fetch(`${SERVER_URL}/passwords`);
+                const passwords = await passwordsResponse.json();
+                console.log("Passwords:", passwords);
+                
+                alert("✅ API тест завершен. Смотрите консоль (F12)");
+                
+            } catch (error) {
+                console.error("❌ API тест failed:", error);
+                alert("❌ Ошибка API теста: " + error.message);
+            }
+        }
+
+        // 🔐 Функции для работы с паролями через базу данных
         async function getPasswordsFromServer() {
             try {
                 const response = await fetch(`${SERVER_URL}/passwords`);
@@ -793,7 +872,6 @@
             }
         }
 
-        // Добавить новый пароль на сервер
         async function addPasswordToServer(password) {
             try {
                 const response = await fetch(`${SERVER_URL}/passwords`, {
@@ -817,7 +895,6 @@
             }
         }
 
-        // Удалить пароль с сервера
         async function removePasswordFromServer(id) {
             try {
                 const response = await fetch(`${SERVER_URL}/passwords/${id}`, {
@@ -836,7 +913,6 @@
             }
         }
 
-        // Проверить пароль на сервере
         async function checkPasswordOnServer(password) {
             try {
                 const response = await fetch(`${SERVER_URL}/passwords/check`, {
@@ -955,7 +1031,6 @@
         }
 
         // 🔥 СЕРВЕРНЫЕ ФУНКЦИИ для просмотров
-
         async function checkIfAlreadyWatched(name) {
             try {
                 const response = await fetch(`${SERVER_URL}/viewers/check/${encodeURIComponent(name)}`);
@@ -997,17 +1072,75 @@
             }
         }
 
-        async function deleteViewerFromServer(name) {
+        // 🔧 ИСПРАВЛЕННАЯ ФУНКЦИЯ УДАЛЕНИЯ
+        async function deleteViewer(name, buttonElement) {
+            console.log("🗑️ Удаляем:", name);
+            
+            const viewerItem = buttonElement.closest('.viewer-item');
+            
+            // Визуальная обратная связь
+            viewerItem.style.opacity = '0.5';
+            viewerItem.style.background = '#fff3cd';
+            buttonElement.innerHTML = '⏳';
+            buttonElement.disabled = true;
+
             try {
-                const response = await fetch(`${SERVER_URL}/viewers/${encodeURIComponent(name)}`, {
-                    method: 'DELETE'
-                });
-                const data = await response.json();
-                console.log("✅ Удален с сервера:", name);
-                return true;
+                const encodedName = encodeURIComponent(name);
+                const url = `${SERVER_URL}/viewers/${encodedName}`;
+                console.log("DELETE URL:", url);
+                
+                const response = await fetch(url, { method: 'DELETE' });
+                console.log("Response status:", response.status);
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    console.log("✅ Удалено успешно:", data);
+                    
+                    // Анимация удаления
+                    viewerItem.style.transition = 'all 0.5s ease';
+                    viewerItem.style.transform = 'translateX(-100%)';
+                    viewerItem.style.opacity = '0';
+                    
+                    // Полностью удаляем элемент после анимации
+                    setTimeout(() => {
+                        viewerItem.remove();
+                        checkIfViewersListEmpty();
+                    }, 500);
+                    
+                } else {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                
             } catch (error) {
-                console.error('Ошибка удаления:', error);
-                return false;
+                console.error("❌ Ошибка удаления:", error);
+                
+                // Возвращаем нормальный вид при ошибке
+                viewerItem.style.opacity = '1';
+                viewerItem.style.background = 'white';
+                viewerItem.style.borderLeftColor = 'red';
+                buttonElement.innerHTML = '❌ Ошибка';
+                
+                setTimeout(() => {
+                    buttonElement.innerHTML = '🗑️';
+                    buttonElement.disabled = false;
+                    viewerItem.style.borderLeftColor = '';
+                }, 3000);
+            }
+        }
+
+        function checkIfViewersListEmpty() {
+            const viewersList = document.getElementById('viewersList');
+            const remainingItems = viewersList.querySelectorAll('.viewer-item');
+            const clearAllBtn = document.getElementById('clearAllBtn');
+            
+            console.log("Осталось элементов:", remainingItems.length);
+            
+            if (remainingItems.length === 0) {
+                viewersList.innerHTML = '<p style="padding: 20px; text-align: center; color: #666;">Пока нет завершенных просмотров.</p>';
+                clearAllBtn.disabled = true;
+                console.log("✅ Список пуст, показываем сообщение");
+            } else {
+                clearAllBtn.disabled = false;
             }
         }
 
@@ -1233,13 +1366,7 @@
             }
         }
 
-        async function showAdminPanel() {
-            showStep(3);
-            
-            const viewers = await getAllViewersFromServer();
-            displayViewersList(viewers);
-        }
-
+        // 🔧 ИСПРАВЛЕННАЯ ФУНКЦИЯ ОТОБРАЖЕНИЯ VIEWERS
         function displayViewersList(viewers) {
             const viewersList = document.getElementById('viewersList');
             const clearAllBtn = document.getElementById('clearAllBtn');
@@ -1247,7 +1374,7 @@
             viewersList.innerHTML = '';
 
             if (viewers.length === 0) {
-                viewersList.innerHTML = '<p>Пока нет завершенных просмотров.</p>';
+                viewersList.innerHTML = '<p style="padding: 20px; text-align: center; color: #666;">Пока нет завершенных просмотров.</p>';
                 clearAllBtn.disabled = true;
                 return;
             }
@@ -1261,51 +1388,36 @@
                 const endTime = new Date(viewer.end_time).toLocaleString('ru-RU');
                 const duration = viewer.watch_duration ? ` (${viewer.watch_duration} сек)` : '';
                 
-                const status = viewer.watched_fully ? '✅Кандидат посмотрел инструктаж' : '❌Кандидат не полностью или вообще не смотрел инструктаж';
+                const status = viewer.watched_fully ? 
+                    '✅ Кандидат посмотрел инструктаж' : 
+                    '❌ Кандидат не полностью или вообще не смотрел инструктаж';
                 
                 viewerItem.className = viewer.watched_fully ? 'viewer-item' : 'viewer-item incomplete';
                 
+                // Используем viewer.name вместо замыкания в строке
                 viewerItem.innerHTML = `
                     <div class="viewer-content">
                         <strong>${viewer.name}</strong><br>
                         ${status}<br>
-                        Начало просмотра: ${startTime}<br>
-                        Завершение просмотра: ${endTime}${duration}
+                        Начало: ${startTime}<br>
+                        Завершение: ${endTime}${duration}
                     </div>
-                    <button class="delete-btn" onclick="deleteViewer('${viewer.name}', this)" title="Удалить запись">
+                    <button class="delete-btn" onclick="deleteViewer('${viewer.name.replace(/'/g, "\\'")}', this)" title="Удалить запись">
                         🗑️
                     </button>
                 `;
                 
                 viewersList.appendChild(viewerItem);
             });
+            
+            console.log(`✅ Отображено ${viewers.length} записей`);
         }
 
-        async function deleteViewer(name, buttonElement) {
-            const viewerItem = buttonElement.closest('.viewer-item');
-            viewerItem.style.opacity = '0.5';
-            buttonElement.innerHTML = '⏳';
-            buttonElement.disabled = true;
-
-            try {
-                await deleteViewerFromServer(name);
-            } catch (error) {
-                // Игнорируем ошибки
-            }
+        async function showAdminPanel() {
+            showStep(3);
             
-            setTimeout(() => {
-                viewerItem.style.display = 'none';
-                
-                const remainingItems = document.querySelectorAll('.viewer-item[style*="display: none"]');
-                const allItems = document.querySelectorAll('.viewer-item');
-                
-                if (remainingItems.length === allItems.length || allItems.length === 0) {
-                    const viewersList = document.getElementById('viewersList');
-                    viewersList.innerHTML = '<p>Пока нет завершенных просмотров.</p>';
-                    const clearAllBtn = document.getElementById('clearAllBtn');
-                    clearAllBtn.disabled = true;
-                }
-            }, 1000);
+            const viewers = await getAllViewersFromServer();
+            displayViewersList(viewers);
         }
 
         function showStep(stepNumber) {
