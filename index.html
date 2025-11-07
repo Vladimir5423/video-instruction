@@ -129,9 +129,10 @@
             box-shadow: 0 10px 30px rgba(102, 126, 234, 0.3);
             padding: 3px;
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            width: 100%;
+            /* Адаптивные стили */
+            width: fit-content;
             max-width: 100%;
-            height: auto;
+            height: fit-content;
             margin-left: auto;
             margin-right: auto;
         }
@@ -141,21 +142,19 @@
             overflow: hidden;
             line-height: 0;
             background: #000;
-            width: 100%;
-            height: 100%;
         }
 
         #customVideo {
             width: 100%;
-            height: 100%;
+            height: auto;
             display: block;
             -webkit-appearance: none;
             -moz-appearance: none;
             appearance: none;
             max-width: 100%;
-            object-fit: contain;
         }
 
+        /* Скрываем все элементы управления */
         #customVideo::-webkit-media-controls {
             display: none !important;
         }
@@ -192,6 +191,7 @@
             display: none !important;
         }
 
+        /* Индикатор паузы */
         .pause-indicator {
             position: absolute;
             top: 50%;
@@ -210,6 +210,7 @@
             display: flex;
         }
 
+        /* Сообщение после завершения видео */
         .completion-message {
             position: absolute;
             top: 3px;
@@ -242,12 +243,13 @@
         .completion-text {
             font-size: 4vw;
             font-weight: bold;
-            margin-bottom: 0;
+            margin-bottom: 0; /* Убираем отступ снизу */
             line-height: 1.4;
             max-width: 100%;
             padding: 0 10px;
         }
 
+        /* Кнопка выхода под видео */
         .exit-button-container {
             text-align: center;
             margin-top: 20px;
@@ -272,6 +274,7 @@
             box-shadow: 0 10px 20px rgba(0,0,0,0.2);
         }
 
+        /* Медиа-запросы для адаптивности */
         @media (min-width: 768px) {
             .completion-icon {
                 font-size: 60px;
@@ -441,103 +444,19 @@
             padding: 12px 25px;
         }
 
-        .rotate-message {
-            display: none;
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            z-index: 10000;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            color: white;
-            text-align: center;
-            padding: 20px;
-        }
-
-        .rotate-message.active {
-            display: flex;
-        }
-
-        .rotate-icon {
-            font-size: 80px;
-            margin-bottom: 20px;
-            animation: rotate 2s infinite linear;
-        }
-
-        .rotate-text {
-            font-size: 24px;
-            font-weight: bold;
-            margin-bottom: 10px;
-        }
-
-        .rotate-subtext {
-            font-size: 16px;
-            opacity: 0.8;
-        }
-
-        @keyframes rotate {
-            from { transform: rotate(0deg); }
-            to { transform: rotate(360deg); }
-        }
-
-        /* Стили для мобильных устройств в альбомной ориентации */
-        @media (max-width: 768px) and (orientation: landscape) {
-            .video-container.landscape-mode {
-                width: 100%;
-                height: 80vh;
-                max-height: 80vh;
-                margin: 10px auto;
-                position: relative;
-                transform: none;
-                border-radius: 15px;
-                border: 4px solid #667eea;
-                box-shadow: 0 10px 30px rgba(102, 126, 234, 0.3);
-            }
-
-            .video-container.landscape-mode .video-inner {
-                border-radius: 12px;
-                width: 100%;
-                height: 100%;
-            }
-
-            .video-container.landscape-mode #customVideo {
-                width: 100%;
-                height: 100%;
-                object-fit: contain;
-                transform: rotate(90deg);
-            }
-
-            .video-container.landscape-mode .pause-indicator {
-                font-size: 60px;
-                transform: translate(-50%, -50%) rotate(-90deg);
-            }
-
-            .video-container.landscape-mode .completion-message {
-                width: calc(100% - 6px);
-                height: calc(100% - 6px);
-                transform: rotate(-90deg);
-            }
-
-            .video-container.landscape-mode .completion-icon {
-                font-size: 40px;
-            }
-
-            .video-container.landscape-mode .completion-text {
-                font-size: 18px;
-            }
-        }
-
         @keyframes fadeIn {
             from { opacity: 0; transform: translateY(20px); }
             to { opacity: 1; transform: translateY(0); }
         }
+
+        @keyframes slideIn {
+            from { opacity: 0; transform: translate(-50%, -40%); }
+            to { opacity: 1; transform: translate(-50%, -50%); }
+        }
     </style>
 </head>
 <body>
+    <!-- Админ-логин -->
     <div class="admin-login" id="adminLogin">
         <div class="login-form">
             <h2>Вход для администрации</h2>
@@ -551,6 +470,7 @@
         </div>
     </div>
 
+    <!-- Модальное окно подтверждения -->
     <div class="confirmation-modal" id="confirmationModal">
         <div class="confirmation-content">
             <h2>Подтверждение действия</h2>
@@ -563,13 +483,8 @@
         </div>
     </div>
 
-    <div class="rotate-message" id="rotateMessage">
-        <div class="rotate-icon">🔄</div>
-        <div class="rotate-text">Поверните телефон</div>
-        <div class="rotate-subtext">Для лучшего просмотра поверните устройство в альбомный режим</div>
-    </div>
-
     <div class="container">
+        <!-- Шаг 1: Регистрация -->
         <div class="step active" id="step1">
             <h1>Инструктаж</h1>
             <div class="form-group">
@@ -582,21 +497,25 @@
             <button class="btn btn-admin" onclick="openAdminLogin()">Администрация</button>
         </div>
 
+        <!-- Шаг 2: Просмотр видео -->
         <div class="step" id="step2">
             <h1>Инструктаж</h1>
             
             <div class="video-container" id="videoContainer">
+                <!-- Индикатор паузы -->
                 <div class="pause-indicator" id="pauseIndicator">
                     ⏸️
                 </div>
                 
                 <div class="video-inner">
                     <video id="customVideo" controlsList="nodownload" oncontextmenu="return false;">
-                        <source src="https://ia600108.us.archive.org/1/items/20251107_20251107_0657/Инструктаж.mp4" type="video/mp4">
+                        <!-- ВАША ССЫЛКА НА ВИДЕО -->
+                        <source src="https://ia800809.us.archive.org/30/items/20251105_20251105_1341/Рабочий%20стол.mp4" type="video/mp4">
                         Ваш браузер не поддерживает видео.
                     </video>
                 </div>
                 
+                <!-- Сообщение после завершения видео -->
                 <div class="completion-message" id="completionMessage">
                     <div class="completion-icon">✅</div>
                     <div class="completion-text">Ожидайте ответа от управляющей администрации</div>
@@ -607,11 +526,13 @@
                 💡 Нажмите на видео для паузы/продолжения
             </div>
 
+            <!-- Кнопка выхода под видео -->
             <div class="exit-button-container" id="exitButtonContainer">
-                <button class="exit-button" onclick="exitToPortrait()">Выйти</button>
+                <button class="exit-button" onclick="location.reload()">Выйти</button>
             </div>
         </div>
 
+        <!-- Админ-панель -->
         <div class="step" id="step3">
             <h1>Панель администрации</h1>
             <div class="admin-panel">
@@ -626,22 +547,23 @@
     </div>
 
     <script>
+        // 🔥 URL ВАШЕГО СЕРВЕРА
         const SERVER_URL = "https://video-instruction-server.onrender.com";
 
         let currentViewer = null;
         let videoStartTime = null;
         let videoPlayer = null;
         let pauseIndicator = null;
-        let isLandscapeMode = false;
-        let wasPlayingBeforeOrientationChange = false;
 
+        // Зашифрованные пароли (base64)
         const encryptedPasswords = [
-            'VmxhZGltaXJfUXdlcnQ=',
-            'U29mYV9Nb3JpYXJ0eQ==',
-            'TWF0dGhld19VbmRlcmhpbGw=',
-            'TGlzYV9Nb3JpYXJ0eQ=='
+            'VmxhZGltaXJfUXdlcnQ=', // Vladimir_Qwert
+            'U29mYV9Nb3JpYXJ0eQ==', // Sofa_Moriarty
+            'TWF0dGhld19VbmRlcmhpbGw=', // Matthew_Underhill
+            'TGlzYV9Nb3JpYXJ0eQ=='  // Lisa_Moriarty
         ];
 
+        // Функция для расшифровки пароля
         function decryptPassword(encrypted) {
             try {
                 return atob(encrypted);
@@ -650,90 +572,9 @@
             }
         }
 
-        function checkMobileOrientation() {
-            const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-            
-            if (isMobile) {
-                const orientation = window.innerHeight > window.innerWidth ? 'portrait' : 'landscape';
-                
-                // Показываем сообщение только на шаге с видео (step2)
-                const currentStep = document.querySelector('.step.active');
-                if (currentStep && currentStep.id === 'step2') {
-                    if (orientation === 'portrait') {
-                        document.getElementById('rotateMessage').classList.add('active');
-                        return false;
-                    } else {
-                        document.getElementById('rotateMessage').classList.remove('active');
-                        return true;
-                    }
-                }
-            }
-            
-            // На ПК всегда разрешаем начало просмотра
-            return true;
-        }
+        // 🔥 СЕРВЕРНЫЕ ФУНКЦИИ
 
-        function activateLandscapeMode() {
-            if (!/Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)) {
-                return;
-            }
-
-            const videoContainer = document.getElementById('videoContainer');
-            videoContainer.classList.add('landscape-mode');
-            isLandscapeMode = true;
-        }
-
-        function deactivateLandscapeMode() {
-            if (!isLandscapeMode) return;
-
-            const videoContainer = document.getElementById('videoContainer');
-            videoContainer.classList.remove('landscape-mode');
-            isLandscapeMode = false;
-        }
-
-        function handleOrientationChange() {
-            if (!videoPlayer) return;
-
-            const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-            if (!isMobile) return;
-
-            const orientation = window.innerHeight > window.innerWidth ? 'portrait' : 'landscape';
-            
-            // Показываем/скрываем сообщение только на шаге с видео
-            const currentStep = document.querySelector('.step.active');
-            if (currentStep && currentStep.id === 'step2') {
-                if (orientation === 'landscape') {
-                    // Альбомный режим - продолжаем воспроизведение
-                    document.getElementById('rotateMessage').classList.remove('active');
-                    activateLandscapeMode();
-                    if (wasPlayingBeforeOrientationChange) {
-                        videoPlayer.play().catch(e => console.log('Автовоспроизведение заблокировано'));
-                        wasPlayingBeforeOrientationChange = false;
-                    }
-                } else {
-                    // Портретный режим - ставим на паузу и показываем сообщение
-                    document.getElementById('rotateMessage').classList.add('active');
-                    if (!videoPlayer.paused) {
-                        wasPlayingBeforeOrientationChange = true;
-                        videoPlayer.pause();
-                        showPauseIndicator();
-                    }
-                    deactivateLandscapeMode();
-                }
-            }
-        }
-
-        window.addEventListener('load', function() {
-            // При загрузке страницы не показываем сообщение на начальном экране
-            const currentStep = document.querySelector('.step.active');
-            if (currentStep && currentStep.id === 'step1') {
-                document.getElementById('rotateMessage').classList.remove('active');
-            }
-        });
-
-        window.addEventListener('resize', handleOrientationChange);
-        window.addEventListener('orientationchange', handleOrientationChange);
-
+        // Проверить, смотрел ли пользователь уже видео
         async function checkIfAlreadyWatched(name) {
             try {
                 const response = await fetch(`${SERVER_URL}/viewers/check/${encodeURIComponent(name)}`);
@@ -745,6 +586,7 @@
             }
         }
 
+        // Сохранить данные просмотра на сервер
         async function saveViewerToServer(viewerData) {
             try {
                 const response = await fetch(`${SERVER_URL}/viewers`, {
@@ -755,6 +597,7 @@
                     body: JSON.stringify(viewerData)
                 });
                 const data = await response.json();
+                console.log("✅ Сохранено на сервере:", viewerData.name);
                 return true;
             } catch (error) {
                 console.error('Ошибка сохранения:', error);
@@ -762,10 +605,12 @@
             }
         }
 
+        // Получить все просмотры с сервера
         async function getAllViewersFromServer() {
             try {
                 const response = await fetch(`${SERVER_URL}/viewers`);
                 const data = await response.json();
+                console.log("✅ Данные с сервера:", data.length);
                 return data;
             } catch (error) {
                 console.error('Ошибка загрузки:', error);
@@ -773,12 +618,14 @@
             }
         }
 
+        // Удалить конкретного пользователя с сервера
         async function deleteViewerFromServer(name) {
             try {
                 const response = await fetch(`${SERVER_URL}/viewers/${encodeURIComponent(name)}`, {
                     method: 'DELETE'
                 });
                 const data = await response.json();
+                console.log("✅ Удален с сервера:", name);
                 return true;
             } catch (error) {
                 console.error('Ошибка удаления:', error);
@@ -786,12 +633,14 @@
             }
         }
 
+        // Очистить все данные на сервере
         async function clearServerData() {
             try {
                 const response = await fetch(`${SERVER_URL}/viewers`, {
                     method: 'DELETE'
                 });
                 const data = await response.json();
+                console.log("✅ Сервер очищен");
                 return true;
             } catch (error) {
                 console.error('Ошибка очистки:', error);
@@ -799,6 +648,7 @@
             }
         }
 
+        // Функция для переключения паузы/продолжения
         function togglePlayPause() {
             if (!videoPlayer) return;
             
@@ -811,6 +661,7 @@
             }
         }
 
+        // Показать индикатор паузы
         function showPauseIndicator() {
             if (pauseIndicator) {
                 pauseIndicator.classList.add('active');
@@ -820,18 +671,22 @@
             }
         }
 
+        // Скрыть индикатор паузы
         function hidePauseIndicator() {
             if (pauseIndicator) {
                 pauseIndicator.classList.remove('active');
             }
         }
 
+        // Инициализация видеоплеера
         function initVideoPlayer() {
             videoPlayer = document.getElementById('customVideo');
             pauseIndicator = document.getElementById('pauseIndicator');
             const videoContainer = document.getElementById('videoContainer');
             
+            // Обработчик клика по контейнеру видео
             videoContainer.addEventListener('click', function(e) {
+                // Блокируем клики если видео уже завершено
                 const completionMessage = document.getElementById('completionMessage');
                 if (!completionMessage.classList.contains('active')) {
                     togglePlayPause();
@@ -844,28 +699,22 @@
                 }
             });
             
+            // Убираем стандартные элементы управления
             videoPlayer.controls = false;
             
+            // Блокируем контекстное меню на видео
             videoPlayer.addEventListener('contextmenu', function(e) {
                 e.preventDefault();
                 return false;
             });
             
+            // Скрываем индикатор при воспроизведении
             videoPlayer.addEventListener('play', function() {
                 hidePauseIndicator();
             });
 
+            // Сбрасываем видео при каждом новом просмотре
             videoPlayer.currentTime = 0;
-        }
-
-        function exitToPortrait() {
-            // Выходим из ландшафтного режима
-            deactivateLandscapeMode();
-            
-            // Перезагружаем страницу через небольшую задержку
-            setTimeout(() => {
-                location.reload();
-            }, 300);
         }
 
         function openConfirmationModal() {
@@ -879,8 +728,10 @@
         async function confirmClearViewersData() {
             const success = await clearServerData();
             if (success) {
+                // Не показываем сообщение, просто обновляем панель
                 showAdminPanel();
             } else {
+                // Тоже не показываем сообщение об ошибке
                 showAdminPanel();
             }
             closeConfirmationModal();
@@ -900,9 +751,11 @@
         function checkAdminPassword() {
             const password = document.getElementById('adminPassword').value.trim();
             
+            // Скрываем все сообщения об ошибках
             document.getElementById('passwordEmptyError').style.display = 'none';
             document.getElementById('passwordError').style.display = 'none';
             
+            // Проверка на пустое поле
             if (!password) {
                 document.getElementById('passwordEmptyError').style.display = 'block';
                 return;
@@ -938,6 +791,7 @@
                 document.getElementById('nameError').style.display = 'block';
                 valid = false;
             } else {
+                // 🔥 Проверяем на сервере
                 const alreadyWatched = await checkIfAlreadyWatched(name);
                 
                 if (alreadyWatched) {
@@ -947,7 +801,6 @@
             }
 
             if (valid) {
-                // НЕ проверяем ориентацию здесь - просто начинаем просмотр
                 startViewing(name);
             }
         }
@@ -964,17 +817,14 @@
 
             showStep(2);
             
+            // Скрываем сообщение о завершении и кнопку выхода
             const completionMessage = document.getElementById('completionMessage');
             const exitButtonContainer = document.getElementById('exitButtonContainer');
             completionMessage.classList.remove('active');
             exitButtonContainer.style.display = 'none';
 
+            // Инициализируем и запускаем видео
             initVideoPlayer();
-            
-            // Активируем ландшафтный режим для мобильных устройств
-            if (/Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)) {
-                setTimeout(activateLandscapeMode, 500);
-            }
             
             const playPromise = videoPlayer.play();
             if (playPromise !== undefined) {
@@ -989,21 +839,25 @@
                 const endTime = new Date();
                 const watchDuration = Math.round((endTime - videoStartTime) / 1000);
                 
-                const watchedFully = watchDuration >= 602;
+                // Проверяем просмотрено ли 9:37 (577 секунд) или больше
+                const watchedFully = watchDuration >= 11;
                 
                 currentViewer.completed = true;
                 currentViewer.endTime = endTime.toISOString();
                 currentViewer.watchDuration = watchDuration;
                 currentViewer.watchedFully = watchedFully;
                 
+                // Показываем сообщение поверх видео и кнопку выхода под видео
                 const completionMessage = document.getElementById('completionMessage');
                 const exitButtonContainer = document.getElementById('exitButtonContainer');
                 completionMessage.classList.add('active');
                 exitButtonContainer.style.display = 'block';
                 
+                // Останавливаем видео и делаем его невидимым
                 videoPlayer.pause();
                 videoPlayer.style.opacity = '0';
                 
+                // 🔥 Сохраняем на сервер
                 const success = await saveViewerToServer(currentViewer);
                 if (!success) {
                     alert('Ошибка сохранения данных. Попробуйте еще раз.');
@@ -1014,6 +868,7 @@
         async function showAdminPanel() {
             showStep(3);
             
+            // Загружаем данные с сервера
             const viewers = await getAllViewersFromServer();
             displayViewersList(viewers);
         }
@@ -1026,10 +881,12 @@
 
             if (viewers.length === 0) {
                 viewersList.innerHTML = '<p>Пока нет завершенных просмотров.</p>';
+                // Отключаем кнопку очистки
                 clearAllBtn.disabled = true;
                 return;
             }
 
+            // Включаем кнопку очистки если есть просмотры
             clearAllBtn.disabled = false;
 
             viewers.forEach(viewer => {
@@ -1059,23 +916,30 @@
             });
         }
 
+        // Функция для удаления конкретного пользователя (БЕЗ подтверждения)
         async function deleteViewer(name, buttonElement) {
+            // Сразу скрываем элемент для лучшего UX
             const viewerItem = buttonElement.closest('.viewer-item');
             viewerItem.style.opacity = '0.5';
             buttonElement.innerHTML = '⏳';
             buttonElement.disabled = true;
 
             try {
+                // Пытаемся удалить на сервере
                 await deleteViewerFromServer(name);
             } catch (error) {
+                // Игнорируем ошибки
             }
             
+            // Через секунду полностью скрываем элемент
             setTimeout(() => {
                 viewerItem.style.display = 'none';
                 
+                // Проверяем, остались ли еще элементы
                 const remainingItems = document.querySelectorAll('.viewer-item[style*="display: none"]');
                 const allItems = document.querySelectorAll('.viewer-item');
                 
+                // Если все элементы скрыты (удалены), показываем сообщение
                 if (remainingItems.length === allItems.length || allItems.length === 0) {
                     const viewersList = document.getElementById('viewersList');
                     viewersList.innerHTML = '<p>Пока нет завершенных просмотров.</p>';
@@ -1090,17 +954,14 @@
                 step.classList.remove('active');
             });
             document.getElementById(`step${stepNumber}`).classList.add('active');
-            
-            // Скрываем сообщение о повороте на всех шагах кроме step2
-            if (stepNumber !== 2) {
-                document.getElementById('rotateMessage').classList.remove('active');
-            }
         }
 
+        // Блокируем контекстное меню
         document.addEventListener('contextmenu', function(e) {
             e.preventDefault();
         });
 
+        // Блокируем горячие клавиши
         document.addEventListener('keydown', function(e) {
             if (e.key === 'F11' || e.key === 'F12' || (e.ctrlKey && e.key === 'f') || e.key === 'F') {
                 e.preventDefault();
