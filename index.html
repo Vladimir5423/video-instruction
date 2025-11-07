@@ -129,9 +129,9 @@
             box-shadow: 0 10px 30px rgba(102, 126, 234, 0.3);
             padding: 3px;
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            width: fit-content;
+            width: 100%;
             max-width: 100%;
-            height: fit-content;
+            height: auto;
             margin-left: auto;
             margin-right: auto;
         }
@@ -141,16 +141,19 @@
             overflow: hidden;
             line-height: 0;
             background: #000;
+            width: 100%;
+            height: 100%;
         }
 
         #customVideo {
             width: 100%;
-            height: auto;
+            height: 100%;
             display: block;
             -webkit-appearance: none;
             -moz-appearance: none;
             appearance: none;
             max-width: 100%;
+            object-fit: contain;
         }
 
         #customVideo::-webkit-media-controls {
@@ -484,39 +487,39 @@
         /* Стили для мобильных устройств в альбомной ориентации */
         @media (max-width: 768px) and (orientation: landscape) {
             .video-container.landscape-mode {
-                position: fixed;
-                top: 0;
-                left: 0;
-                width: 100vh;
-                height: 100vw;
-                transform: rotate(90deg) translateX(100vw);
-                transform-origin: top left;
-                z-index: 9999;
-                margin: 0;
-                border-radius: 0;
-                border: none;
-                box-shadow: none;
+                width: 100%;
+                height: 80vh;
+                max-height: 80vh;
+                margin: 10px auto;
+                position: relative;
+                transform: none;
+                border-radius: 15px;
+                border: 4px solid #667eea;
+                box-shadow: 0 10px 30px rgba(102, 126, 234, 0.3);
             }
 
             .video-container.landscape-mode .video-inner {
-                border-radius: 0;
+                border-radius: 12px;
+                width: 100%;
+                height: 100%;
             }
 
             .video-container.landscape-mode #customVideo {
-                width: 100vh;
-                height: 100vw;
-                object-fit: cover;
+                width: 100%;
+                height: 100%;
+                object-fit: contain;
+                transform: rotate(90deg);
             }
 
             .video-container.landscape-mode .pause-indicator {
                 font-size: 60px;
+                transform: translate(-50%, -50%) rotate(-90deg);
             }
 
             .video-container.landscape-mode .completion-message {
-                width: 100vh;
-                height: 100vw;
-                transform: rotate(-90deg) translateY(-100vh);
-                transform-origin: top left;
+                width: calc(100% - 6px);
+                height: calc(100% - 6px);
+                transform: rotate(-90deg);
             }
 
             .video-container.landscape-mode .completion-icon {
@@ -630,6 +633,7 @@
         let videoPlayer = null;
         let pauseIndicator = null;
         let isLandscapeMode = false;
+        let wasPlayingBeforeOrientationChange = false;
 
         const encryptedPasswords = [
             'VmxhZGltaXJfUXdlcnQ=',
@@ -652,12 +656,16 @@
             if (isMobile) {
                 const orientation = window.innerHeight > window.innerWidth ? 'portrait' : 'landscape';
                 
-                if (orientation === 'portrait') {
-                    document.getElementById('rotateMessage').classList.add('active');
-                    return false;
-                } else {
-                    document.getElementById('rotateMessage').classList.remove('active');
-                    return true;
+                // Показываем сообщение только на шаге с видео (step2)
+                const currentStep = document.querySelector('.step.active');
+                if (currentStep && currentStep.id === 'step2') {
+                    if (orientation === 'portrait') {
+                        document.getElementById('rotateMessage').classList.add('active');
+                        return false;
+                    } else {
+                        document.getElementById('rotateMessage').classList.remove('active');
+                        return true;
+                    }
                 }
             }
             
@@ -673,22 +681,6 @@
             const videoContainer = document.getElementById('videoContainer');
             videoContainer.classList.add('landscape-mode');
             isLandscapeMode = true;
-
-            // Входим в полноэкранный режим
-            if (videoContainer.requestFullscreen) {
-                videoContainer.requestFullscreen();
-            } else if (videoContainer.webkitRequestFullscreen) {
-                videoContainer.webkitRequestFullscreen();
-            } else if (videoContainer.mozRequestFullScreen) {
-                videoContainer.mozRequestFullScreen();
-            }
-
-            // Блокируем ориентацию в альбомную
-            if (screen.orientation && screen.orientation.lock) {
-                screen.orientation.lock('landscape').catch(function(error) {
-                    console.log('Ошибка блокировки ориентации:', error);
-                });
-            }
         }
 
         function deactivateLandscapeMode() {
@@ -697,42 +689,50 @@
             const videoContainer = document.getElementById('videoContainer');
             videoContainer.classList.remove('landscape-mode');
             isLandscapeMode = false;
-
-            // Разблокируем ориентацию
-            if (screen.orientation && screen.orientation.unlock) {
-                screen.orientation.unlock();
-            }
-
-            // Выходим из полноэкранного режима
-            if (document.exitFullscreen) {
-                document.exitFullscreen();
-            } else if (document.webkitExitFullscreen) {
-                document.webkitExitFullscreen();
-            } else if (document.mozCancelFullScreen) {
-                document.mozCancelFullScreen();
-            }
-
-            // Показываем сообщение о повороте, если нужно
-            setTimeout(checkMobileOrientation, 500);
         }
 
-        window.addEventListener('load', checkMobileOrientation);
-        window.addEventListener('resize', checkMobileOrientation);
-        window.addEventListener('orientationchange', checkMobileOrientation);
+        function handleOrientationChange() {
+            if (!videoPlayer) return;
 
-        document.addEventListener('fullscreenchange', handleFullscreenChange);
-        document.addEventListener('webkitfullscreenchange', handleFullscreenChange);
-        document.addEventListener('mozfullscreenchange', handleFullscreenChange);
+            const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+            if (!isMobile) return;
 
-        function handleFullscreenChange() {
-            const isFullscreen = document.fullscreenElement || 
-                                document.webkitFullscreenElement || 
-                                document.mozFullScreenElement;
+            const orientation = window.innerHeight > window.innerWidth ? 'portrait' : 'landscape';
             
-            if (!isFullscreen && isLandscapeMode) {
-                deactivateLandscapeMode();
+            // Показываем/скрываем сообщение только на шаге с видео
+            const currentStep = document.querySelector('.step.active');
+            if (currentStep && currentStep.id === 'step2') {
+                if (orientation === 'landscape') {
+                    // Альбомный режим - продолжаем воспроизведение
+                    document.getElementById('rotateMessage').classList.remove('active');
+                    activateLandscapeMode();
+                    if (wasPlayingBeforeOrientationChange) {
+                        videoPlayer.play().catch(e => console.log('Автовоспроизведение заблокировано'));
+                        wasPlayingBeforeOrientationChange = false;
+                    }
+                } else {
+                    // Портретный режим - ставим на паузу и показываем сообщение
+                    document.getElementById('rotateMessage').classList.add('active');
+                    if (!videoPlayer.paused) {
+                        wasPlayingBeforeOrientationChange = true;
+                        videoPlayer.pause();
+                        showPauseIndicator();
+                    }
+                    deactivateLandscapeMode();
+                }
             }
         }
+
+        window.addEventListener('load', function() {
+            // При загрузке страницы не показываем сообщение на начальном экране
+            const currentStep = document.querySelector('.step.active');
+            if (currentStep && currentStep.id === 'step1') {
+                document.getElementById('rotateMessage').classList.remove('active');
+            }
+        });
+
+        window.addEventListener('resize', handleOrientationChange);
+        window.addEventListener('orientationchange', handleOrientationChange);
 
         async function checkIfAlreadyWatched(name) {
             try {
@@ -856,15 +856,6 @@
             });
 
             videoPlayer.currentTime = 0;
-
-            // Двойное нажатие для полноэкранного режима
-            videoContainer.addEventListener('dblclick', function() {
-                if (isLandscapeMode) {
-                    deactivateLandscapeMode();
-                } else {
-                    activateLandscapeMode();
-                }
-            });
         }
 
         function exitToPortrait() {
@@ -1099,6 +1090,11 @@
                 step.classList.remove('active');
             });
             document.getElementById(`step${stepNumber}`).classList.add('active');
+            
+            // Скрываем сообщение о повороте на всех шагах кроме step2
+            if (stepNumber !== 2) {
+                document.getElementById('rotateMessage').classList.remove('active');
+            }
         }
 
         document.addEventListener('contextmenu', function(e) {
