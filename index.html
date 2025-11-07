@@ -481,8 +481,9 @@
             to { transform: rotate(360deg); }
         }
 
+        /* Стили для мобильных устройств в альбомной ориентации */
         @media (max-width: 768px) and (orientation: landscape) {
-            .video-container {
+            .video-container.landscape-mode {
                 position: fixed;
                 top: 0;
                 left: 0;
@@ -497,32 +498,32 @@
                 box-shadow: none;
             }
 
-            .video-inner {
+            .video-container.landscape-mode .video-inner {
                 border-radius: 0;
             }
 
-            #customVideo {
+            .video-container.landscape-mode #customVideo {
                 width: 100vh;
                 height: 100vw;
                 object-fit: cover;
             }
 
-            .pause-indicator {
+            .video-container.landscape-mode .pause-indicator {
                 font-size: 60px;
             }
 
-            .completion-message {
+            .video-container.landscape-mode .completion-message {
                 width: 100vh;
                 height: 100vw;
                 transform: rotate(-90deg) translateY(-100vh);
                 transform-origin: top left;
             }
 
-            .completion-icon {
+            .video-container.landscape-mode .completion-icon {
                 font-size: 40px;
             }
 
-            .completion-text {
+            .video-container.landscape-mode .completion-text {
                 font-size: 18px;
             }
         }
@@ -604,7 +605,7 @@
             </div>
 
             <div class="exit-button-container" id="exitButtonContainer">
-                <button class="exit-button" onclick="location.reload()">Выйти</button>
+                <button class="exit-button" onclick="exitToPortrait()">Выйти</button>
             </div>
         </div>
 
@@ -628,6 +629,7 @@
         let videoStartTime = null;
         let videoPlayer = null;
         let pauseIndicator = null;
+        let isLandscapeMode = false;
 
         const encryptedPasswords = [
             'VmxhZGltaXJfUXdlcnQ=',
@@ -662,32 +664,60 @@
             return true;
         }
 
+        function activateLandscapeMode() {
+            if (!/Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)) {
+                return;
+            }
+
+            const videoContainer = document.getElementById('videoContainer');
+            videoContainer.classList.add('landscape-mode');
+            isLandscapeMode = true;
+
+            // Входим в полноэкранный режим
+            if (videoContainer.requestFullscreen) {
+                videoContainer.requestFullscreen();
+            } else if (videoContainer.webkitRequestFullscreen) {
+                videoContainer.webkitRequestFullscreen();
+            } else if (videoContainer.mozRequestFullScreen) {
+                videoContainer.mozRequestFullScreen();
+            }
+
+            // Блокируем ориентацию в альбомную
+            if (screen.orientation && screen.orientation.lock) {
+                screen.orientation.lock('landscape').catch(function(error) {
+                    console.log('Ошибка блокировки ориентации:', error);
+                });
+            }
+        }
+
+        function deactivateLandscapeMode() {
+            if (!isLandscapeMode) return;
+
+            const videoContainer = document.getElementById('videoContainer');
+            videoContainer.classList.remove('landscape-mode');
+            isLandscapeMode = false;
+
+            // Разблокируем ориентацию
+            if (screen.orientation && screen.orientation.unlock) {
+                screen.orientation.unlock();
+            }
+
+            // Выходим из полноэкранного режима
+            if (document.exitFullscreen) {
+                document.exitFullscreen();
+            } else if (document.webkitExitFullscreen) {
+                document.webkitExitFullscreen();
+            } else if (document.mozCancelFullScreen) {
+                document.mozCancelFullScreen();
+            }
+
+            // Показываем сообщение о повороте, если нужно
+            setTimeout(checkMobileOrientation, 500);
+        }
+
         window.addEventListener('load', checkMobileOrientation);
         window.addEventListener('resize', checkMobileOrientation);
         window.addEventListener('orientationchange', checkMobileOrientation);
-
-        const originalStartViewing = startViewing;
-        
-        startViewing = function(name) {
-            if (!checkMobileOrientation()) {
-                return;
-            }
-            
-            originalStartViewing(name);
-            
-            if (/Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)) {
-                setTimeout(() => {
-                    const videoContainer = document.getElementById('videoContainer');
-                    if (videoContainer.requestFullscreen) {
-                        videoContainer.requestFullscreen();
-                    } else if (videoContainer.webkitRequestFullscreen) {
-                        videoContainer.webkitRequestFullscreen();
-                    } else if (videoContainer.mozRequestFullScreen) {
-                        videoContainer.mozRequestFullScreen();
-                    }
-                }, 1000);
-            }
-        };
 
         document.addEventListener('fullscreenchange', handleFullscreenChange);
         document.addEventListener('webkitfullscreenchange', handleFullscreenChange);
@@ -698,8 +728,8 @@
                                 document.webkitFullscreenElement || 
                                 document.mozFullScreenElement;
             
-            if (!isFullscreen && /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)) {
-                checkMobileOrientation();
+            if (!isFullscreen && isLandscapeMode) {
+                deactivateLandscapeMode();
             }
         }
 
@@ -826,19 +856,24 @@
 
             videoPlayer.currentTime = 0;
 
-            if (/Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)) {
-                const videoContainer = document.getElementById('videoContainer');
-                
-                videoContainer.addEventListener('dblclick', function() {
-                    if (videoContainer.requestFullscreen) {
-                        videoContainer.requestFullscreen();
-                    } else if (videoContainer.webkitRequestFullscreen) {
-                        videoContainer.webkitRequestFullscreen();
-                    } else if (videoContainer.mozRequestFullScreen) {
-                        videoContainer.mozRequestFullScreen();
-                    }
-                });
-            }
+            // Двойное нажатие для полноэкранного режима
+            videoContainer.addEventListener('dblclick', function() {
+                if (isLandscapeMode) {
+                    deactivateLandscapeMode();
+                } else {
+                    activateLandscapeMode();
+                }
+            });
+        }
+
+        function exitToPortrait() {
+            // Выходим из ландшафтного режима
+            deactivateLandscapeMode();
+            
+            // Перезагружаем страницу через небольшую задержку
+            setTimeout(() => {
+                location.reload();
+            }, 300);
         }
 
         function openConfirmationModal() {
@@ -942,6 +977,11 @@
             exitButtonContainer.style.display = 'none';
 
             initVideoPlayer();
+            
+            // Активируем ландшафтный режим для мобильных устройств
+            if (/Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)) {
+                setTimeout(activateLandscapeMode, 500);
+            }
             
             const playPromise = videoPlayer.play();
             if (playPromise !== undefined) {
